@@ -1,4 +1,4 @@
-package pnh.dev.qs.auth.service;
+package pnh.dev.qs.auth.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -8,59 +8,26 @@ import org.springframework.transaction.annotation.Transactional;
 import pnh.dev.qs.auth.dto.response.AuthResponse;
 import pnh.dev.qs.auth.dto.request.LoginRequest;
 import pnh.dev.qs.auth.dto.RefreshTokenData;
-import pnh.dev.qs.auth.dto.request.RegisterRequest;
 import pnh.dev.qs.auth.jwt.JwtProperties;
 import pnh.dev.qs.auth.jwt.JwtTokenProvider;
-import pnh.dev.qs.exception.custom.DuplicateResourceException;
+import pnh.dev.qs.auth.service.AuthService;
+import pnh.dev.qs.auth.service.RefreshTokenService;
 import pnh.dev.qs.exception.custom.UnauthorizedException;
-import pnh.dev.qs.user.entity.Role;
 import pnh.dev.qs.user.entity.UserAccount;
-import pnh.dev.qs.user.entity.UserProfile;
-import pnh.dev.qs.user.repository.RoleRepository;
 import pnh.dev.qs.user.repository.UserAccountRepository;
-
 import java.time.Instant;
-import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UserAccountRepository userAccountRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
     private final StringRedisTemplate redisTemplate;
 
-    @Override
-    @Transactional
-    public AuthResponse register(RegisterRequest request, String deviceInfo, String ipAddress) {
-        if (userAccountRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Username is already taken");
-        }
-        if (userAccountRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email is already in use");
-        }
-
-        UserAccount user = new UserAccount();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        
-        Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Default role not set in database"));
-        user.setRoles(Collections.singleton(userRole));
-
-        UserProfile profile = new UserProfile();
-        profile.setUserAccount(user);
-        user.setProfile(profile);
-
-        user = userAccountRepository.save(user);
-
-        return generateAuthResponse(user, deviceInfo, ipAddress);
-    }
 
     @Override
     @Transactional

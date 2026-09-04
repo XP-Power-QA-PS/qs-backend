@@ -14,7 +14,7 @@ import pnh.dev.qs.auth.dto.response.AuthResponse;
 import pnh.dev.qs.auth.dto.request.ForgotPasswordRequest;
 import pnh.dev.qs.auth.dto.request.LoginRequest;
 import pnh.dev.qs.auth.dto.request.RefreshTokenRequest;
-import pnh.dev.qs.auth.dto.request.RegisterRequest;
+
 import pnh.dev.qs.auth.dto.request.ResetPasswordRequest;
 import pnh.dev.qs.auth.service.AuthService;
 import pnh.dev.qs.auth.service.PasswordResetService;
@@ -31,13 +31,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final RefreshTokenService refreshTokenService;
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
-                                                 @RequestHeader(value = "User-Agent", defaultValue = "Unknown") String userAgent,
-                                                 HttpServletRequest httpRequest) {
-        String ipAddress = getClientIp(httpRequest);
-        return new ResponseEntity<>(authService.register(request, userAgent, ipAddress), HttpStatus.CREATED);
-    }
+
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
