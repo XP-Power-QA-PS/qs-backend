@@ -40,5 +40,5 @@ build/
 .env.*
 
 *.sql
+!src/main/resources/db/migration/*.sql
 docker-compose.yml
-
