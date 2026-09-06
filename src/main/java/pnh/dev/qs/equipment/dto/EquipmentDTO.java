@@ -8,5 +8,4 @@ public class EquipmentDTO {
     private String equipmentCode;
     private String equipmentName;
     private Long floorId;
-    private boolean isTestedThisMonth;
 }
