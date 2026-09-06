@@ -4,7 +4,7 @@ CREATE TABLE equipment_daily_tests (
     test_date DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_by VARCHAR(50) NOT NULL,
-    deleted_at TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE (record_id, test_date)
 );
 
