@@ -36,7 +36,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long>,
     void restoreUser(@Param("id") Long id);
 
     @Modifying
-    @Query(value = "UPDATE user_accounts SET username = CONCAT('Deleted User ', id), email = NULL, password_hash = '', is_enabled = false WHERE id = :id", nativeQuery = true)
+    @Query(value = "UPDATE user_accounts SET username = CONCAT('Deleted User ', id), email = CONCAT('deleted-', id, '@example.invalid'), is_enabled = false WHERE id = :id", nativeQuery = true)
     void anonymizeUser(@Param("id") Long id);
 
     @Modifying
