@@ -36,7 +36,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String jti = tokenProvider.getJtiFromToken(jwt);
                 
                 // Check if token is in blacklist
-                Boolean isBlacklisted = redisTemplate.hasKey("blacklist:" + jti);
+                Boolean isBlacklisted = false;
+                try {
+                    isBlacklisted = redisTemplate.hasKey("blacklist:" + jti);
+                } catch (org.springframework.dao.QueryTimeoutException | org.springframework.data.redis.RedisConnectionFailureException ex) {
+                    logger.error("Redis đang không phản hồi khi check token: " + jti, ex);
+                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    response.getWriter().write("Service Unavailable: Cannot verify token status");
+                    return;
+                }
+
                 if (Boolean.TRUE.equals(isBlacklisted)) {
                     filterChain.doFilter(request, response);
                     return;
