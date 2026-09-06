@@ -18,8 +18,8 @@ CREATE TABLE equipment_test_attempts (
     no_go_status VARCHAR(10) NOT NULL,
     result_status VARCHAR(10) NOT NULL,
     remark TEXT,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_by VARCHAR(50) NOT NULL,
-    deleted_at TIMESTAMP
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
