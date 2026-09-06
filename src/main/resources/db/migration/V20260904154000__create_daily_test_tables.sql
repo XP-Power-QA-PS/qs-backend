@@ -2,7 +2,7 @@ CREATE TABLE equipment_daily_tests (
     id BIGSERIAL PRIMARY KEY,
     record_id BIGINT NOT NULL REFERENCES equipment_test_records(id),
     test_date DATE NOT NULL,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_by VARCHAR(50) NOT NULL,
     deleted_at TIMESTAMP,
     UNIQUE (record_id, test_date)
