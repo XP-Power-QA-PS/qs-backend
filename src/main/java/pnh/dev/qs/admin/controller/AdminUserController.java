@@ -2,6 +2,7 @@ package pnh.dev.qs.admin.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,12 +11,10 @@ import pnh.dev.qs.admin.dto.request.AdminCreateUserRequest;
 import pnh.dev.qs.admin.dto.request.AdminUpdateUserRequest;
 import pnh.dev.qs.admin.dto.response.UserResponse;
 import pnh.dev.qs.admin.service.AdminUserService;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -29,7 +28,7 @@ public class AdminUserController {
     public ResponseEntity<Page<UserResponse>> getAllUsers(
             @RequestParam(required = false) Boolean status,
             @RequestParam(required = false) String keyword,
-            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminUserService.getAllUsers(status, keyword, pageable));
     }
 
@@ -56,7 +55,7 @@ public class AdminUserController {
 
     @GetMapping("/trash")
     public ResponseEntity<Page<UserResponse>> getDeletedUsers(
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault() Pageable pageable) {
         return ResponseEntity.ok(adminUserService.getDeletedUsers(pageable));
     }
 

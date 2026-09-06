@@ -2,7 +2,6 @@ package pnh.dev.qs.auth.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pnh.dev.qs.auth.dto.response.AuthResponse;
@@ -14,40 +13,24 @@ import pnh.dev.qs.auth.service.AuthService;
 import pnh.dev.qs.auth.service.RefreshTokenService;
 import pnh.dev.qs.exception.custom.UnauthorizedException;
 import pnh.dev.qs.user.entity.UserAccount;
-import pnh.dev.qs.user.repository.UserAccountRepository;
-import java.time.Instant;
+import pnh.dev.qs.user.service.UserManagementService;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final UserAccountRepository userAccountRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UserManagementService userManagementService;
     private final JwtTokenProvider tokenProvider;
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
     private final StringRedisTemplate redisTemplate;
-
 
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request, String deviceInfo, String ipAddress) {
         refreshTokenService.checkRateLimit("login", ipAddress, 5, 1);
 
-        UserAccount user = userAccountRepository.findByUsername(request.getUsernameOrEmail())
-                .orElseGet(() -> userAccountRepository.findByEmail(request.getUsernameOrEmail())
-                        .orElseThrow(() -> new UnauthorizedException("Invalid username/email or password")));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid username/email or password");
-        }
-
-        if (!user.isEnabled()) {
-            throw new UnauthorizedException("Account is disabled");
-        }
-
-        user.setLastLoginAt(Instant.now());
-        userAccountRepository.save(user);
+        UserAccount user = userManagementService.verifyCredentials(request.getUsernameOrEmail(), request.getPassword());
 
         return generateAuthResponse(user, deviceInfo, ipAddress);
     }
@@ -61,8 +44,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid or expired refresh token");
         }
 
-        UserAccount user = userAccountRepository.findById(tokenData.getUserId())
-                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        UserAccount user = userManagementService.getUserById(tokenData.getUserId());
 
         if (!user.isEnabled()) {
             throw new UnauthorizedException("Account is disabled");

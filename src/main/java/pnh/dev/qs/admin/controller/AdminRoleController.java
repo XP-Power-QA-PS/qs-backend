@@ -9,12 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import pnh.dev.qs.admin.dto.request.RoleRequest;
 import pnh.dev.qs.admin.dto.response.RoleResponse;
 import pnh.dev.qs.admin.service.AdminRoleService;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/roles")
