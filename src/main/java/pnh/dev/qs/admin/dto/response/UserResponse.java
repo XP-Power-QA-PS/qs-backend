@@ -1,4 +1,4 @@
-package pnh.dev.qs.user.dto;
+package pnh.dev.qs.admin.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -6,23 +6,27 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Builder;
 import lombok.Data;
-import pnh.dev.qs.user.entity.Gender;
 
-import java.time.LocalDate;
+import java.time.Instant;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @Builder
-public class UserProfileDTO {
+public class UserResponse {
+    
     
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long id;
     private String username;
     private String email;
+    private boolean isEnabled;
+    private Instant lastLoginAt;
+    private Set<String> roles;
     private String firstName;
     private String lastName;
     private String phoneNumber;
     private String avatarUrl;
-    private LocalDate dateOfBirth;
-    private Gender gender;
-    private String bio;
+    private Instant createdAt;
 }

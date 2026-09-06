@@ -1,5 +1,9 @@
 package pnh.dev.qs.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +16,8 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshTokenData {
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long userId;
     private String deviceInfo;
     private String ipAddress;
