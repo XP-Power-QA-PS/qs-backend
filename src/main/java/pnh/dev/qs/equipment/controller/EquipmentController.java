@@ -19,7 +19,7 @@ public class EquipmentController {
     private final EquipmentService equipmentService;
 
     @GetMapping("/floors")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<FloorDTO>> getAllFloors() {
         return ResponseEntity.ok(equipmentService.getAllFloors());
     }
