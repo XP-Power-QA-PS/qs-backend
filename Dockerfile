@@ -5,9 +5,9 @@ FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /app
 
-# Cache dependencies
+# Cache dependencies and plugins
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve-plugins dependency:resolve -B
 
 # Copy source code and build package
 COPY src ./src
