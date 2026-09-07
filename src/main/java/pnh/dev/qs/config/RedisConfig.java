@@ -52,7 +52,9 @@ public class RedisConfig {
             clientConfigBuilder.useSsl().disablePeerVerification();
         }
 
-        return new LettuceConnectionFactory(serverConfig, clientConfigBuilder.build());
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(serverConfig, clientConfigBuilder.build());
+        factory.afterPropertiesSet();
+        return factory;
     }
 
     @Bean
