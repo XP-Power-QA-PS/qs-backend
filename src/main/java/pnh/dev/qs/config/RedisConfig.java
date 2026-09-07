@@ -10,6 +10,8 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.time.Duration;
+
 @Configuration
 public class RedisConfig {
 
@@ -25,6 +27,9 @@ public class RedisConfig {
     @Value("${spring.data.redis.ssl.enabled:false}")
     private boolean sslEnabled;
 
+    @Value("${spring.data.redis.timeout:3000}")
+    private long timeout;
+
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(redisHost, redisPort);
@@ -33,10 +38,11 @@ public class RedisConfig {
         }
 
         LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
-                LettuceClientConfiguration.builder();
+                LettuceClientConfiguration.builder()
+                        .commandTimeout(Duration.ofMillis(timeout));
 
-        // Tự động bật SSL nếu cấu hình ssl.enabled=true hoặc kết nối tới Upstash cloud
-        if (sslEnabled || (redisHost != null && redisHost.contains("upstash.io"))) {
+        // Kích hoạt SSL khi biến môi trường REDIS_SSL_ENABLED=true
+        if (sslEnabled) {
             clientConfigBuilder.useSsl();
         }
 
@@ -48,4 +54,3 @@ public class RedisConfig {
         return new StringRedisTemplate(connectionFactory);
     }
 }
-
