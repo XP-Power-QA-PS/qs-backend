@@ -17,6 +17,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -77,6 +80,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
-        return new ResponseEntity<>(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request), HttpStatus.INTERNAL_SERVER_ERROR);
+        log.error("Unhandled exception at [{}]: ", request.getRequestURI(), ex);
+        String message = ex.getMessage();
+        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+            message = message + " | Cause: " + ex.getCause().getMessage();
+        }
+        return new ResponseEntity<>(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message != null ? message : "An unexpected error occurred", request), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
+
+
