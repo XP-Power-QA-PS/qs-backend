@@ -18,7 +18,7 @@ public interface GoNoGoStatsRepository extends JpaRepository<EquipmentTestAttemp
      * Tổng hợp các chỉ số KPI.
      * Trả về List<Object[]> gồm 1 row:
      * [totalAttempts, passCount, failCount, goFailCount, noGoFailCount, programFailCount]
-     *
+     * <p>
      * Dùng COALESCE để tránh NULL khi không có data.
      * Tách thành 2 overload để tránh lỗi binding NULL với parameter PostgreSQL.
      */
@@ -131,7 +131,7 @@ public interface GoNoGoStatsRepository extends JpaRepository<EquipmentTestAttemp
             WHERE a.attempt_time BETWEEN :startDate AND :endDate
               AND a.deleted_at IS NULL
             GROUP BY DATE(a.attempt_time AT TIME ZONE 'UTC')
-            ORDER BY testDate ASC
+            ORDER BY testDate
             """, nativeQuery = true)
     List<Object[]> getRawDailyTrendAllFloors(@Param("startDate") Instant startDate,
                                               @Param("endDate") Instant endDate);
@@ -150,7 +150,7 @@ public interface GoNoGoStatsRepository extends JpaRepository<EquipmentTestAttemp
               AND e.floor_id = :floorId
               AND a.deleted_at IS NULL
             GROUP BY DATE(a.attempt_time AT TIME ZONE 'UTC')
-            ORDER BY testDate ASC
+            ORDER BY testDate
             """, nativeQuery = true)
     List<Object[]> getRawDailyTrendByFloor(@Param("startDate") Instant startDate,
                                             @Param("endDate") Instant endDate,
@@ -226,7 +226,7 @@ public interface GoNoGoStatsRepository extends JpaRepository<EquipmentTestAttemp
               AND tr.test_year    = :year
               AND a.deleted_at IS NULL
             GROUP BY dt.test_date
-            ORDER BY dt.test_date ASC
+            ORDER BY dt.test_date
             """, nativeQuery = true)
     List<Object[]> getRawDailyBreakdownForEquipment(@Param("equipmentId") Long equipmentId,
                                                      @Param("month") int month,
@@ -248,7 +248,7 @@ public interface GoNoGoStatsRepository extends JpaRepository<EquipmentTestAttemp
             WHERE tr.equipment_id = :equipmentId
               AND a.deleted_at IS NULL
             GROUP BY tr.test_month, tr.test_year
-            ORDER BY tr.test_year ASC, tr.test_month ASC
+            ORDER BY tr.test_year , tr.test_month
             """, nativeQuery = true)
     List<Object[]> getRawMonthlyTrendForEquipment(@Param("equipmentId") Long equipmentId);
 }
