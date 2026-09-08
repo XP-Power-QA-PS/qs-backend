@@ -60,5 +60,13 @@ public class EquipmentController {
     public ResponseEntity<EquipmentTestAttemptDTO> addTestAttempt(@PathVariable Long dailyTestId, @Valid @RequestBody CreateTestAttemptRequest request, Authentication authentication) {
         return ResponseEntity.ok(equipmentService.addTestAttempt(dailyTestId, request, authentication.getName()));
     }
+
+    @GetMapping("/records/{recordId}/compare-days")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    public ResponseEntity<pnh.dev.qs.equipment.dto.DayComparisonDTO> compareDays(
+            @PathVariable Long recordId,
+            @RequestParam List<Long> dayIds) {
+        return ResponseEntity.ok(equipmentService.compareDays(recordId, dayIds));
+    }
 }
 
