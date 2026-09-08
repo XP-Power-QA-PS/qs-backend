@@ -34,22 +34,24 @@ public class GoNoGoStatsServiceImpl implements GoNoGoStatsService {
     }
 
     private LocalDate toLocalDate(Object raw) {
-        if (raw == null) return null;
-        if (raw instanceof LocalDate ld) return ld;
-        if (raw instanceof java.sql.Date d) return d.toLocalDate();
-        if (raw instanceof java.util.Date d) {
-            return d.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
-        }
-        return LocalDate.parse(raw.toString());
+        return switch (raw) {
+            case null -> null;
+            case LocalDate ld -> ld;
+            case java.sql.Date d -> d.toLocalDate();
+            case java.util.Date d -> d.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+            default -> LocalDate.parse(raw.toString());
+        };
     }
 
     private long toLong(Object raw) {
-        if (raw == null) return 0L;
-        if (raw instanceof BigInteger bi) return bi.longValue();
-        if (raw instanceof Long l) return l;
-        if (raw instanceof Integer i) return i.longValue();
-        if (raw instanceof BigDecimal bd) return bd.longValue();
-        return Long.parseLong(raw.toString());
+        return switch (raw) {
+            case null -> 0L;
+            case BigInteger bi -> bi.longValue();
+            case Long l -> l;
+            case Integer i -> i.longValue();
+            case BigDecimal bd -> bd.longValue();
+            default -> Long.parseLong(raw.toString());
+        };
     }
 
     private double toPassRate(long pass, long total) {
@@ -60,13 +62,13 @@ public class GoNoGoStatsServiceImpl implements GoNoGoStatsService {
     /**
      * Trích row đầu tiên từ List<Object[]>. Nếu không có data trả về array null-safe.
      */
-    private Object[] firstRowOrEmpty(List<Object[]> rows, int columns) {
+    private Object[] firstRowOrEmpty(List<Object[]> rows) {
         if (rows == null || rows.isEmpty()) {
-            Object[] empty = new Object[columns];
-            for (int i = 0; i < columns; i++) empty[i] = 0L;
+            Object[] empty = new Object[6];
+            for (int i = 0; i < 6; i++) empty[i] = 0L;
             return empty;
         }
-        return rows.get(0);
+        return rows.getFirst();
     }
 
     // ─── 1. Summary ───────────────────────────────────────────────────────────
@@ -91,7 +93,7 @@ public class GoNoGoStatsServiceImpl implements GoNoGoStatsService {
             tested   = statsRepository.countTestedEquipmentsByFloor(start, end, floorId);
         }
 
-        Object[] row = firstRowOrEmpty(rawList, 6);
+        Object[] row = firstRowOrEmpty(rawList);
 
         long total       = toLong(row[0]);
         long pass        = toLong(row[1]);
