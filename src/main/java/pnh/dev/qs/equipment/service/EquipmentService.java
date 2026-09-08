@@ -8,6 +8,8 @@ import pnh.dev.qs.equipment.dto.EquipmentDailyTestDTO;
 import pnh.dev.qs.equipment.dto.EquipmentTestAttemptDTO;
 import pnh.dev.qs.equipment.dto.CreateTestAttemptRequest;
 
+import pnh.dev.qs.equipment.dto.DayComparisonDTO;
+
 import java.util.List;
 
 public interface EquipmentService {
@@ -18,4 +20,5 @@ public interface EquipmentService {
     List<EquipmentDailyTestDTO> getDailyTests(Long recordId);
     EquipmentDailyTestDTO createDailyTest(Long recordId, String username);
     EquipmentTestAttemptDTO addTestAttempt(Long dailyTestId, CreateTestAttemptRequest request, String username);
+    DayComparisonDTO compareDays(Long recordId, List<Long> dayIds);
 }

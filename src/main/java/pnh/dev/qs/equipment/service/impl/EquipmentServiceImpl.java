@@ -12,8 +12,10 @@ import pnh.dev.qs.equipment.service.EquipmentTestEngine;
 import pnh.dev.qs.user.entity.UserAccount;
 import pnh.dev.qs.user.service.UserManagementService;
 
+import pnh.dev.qs.equipment.enums.TestStatus;
+
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -131,6 +133,109 @@ public class EquipmentServiceImpl implements EquipmentService {
                 .resultStatus(attempt.getResultStatus())
                 .remark(attempt.getRemark())
                 .testerUsername(attempt.getTester().getUsername())
+                .build();
+    }
+
+    @Override
+    public DayComparisonDTO compareDays(Long recordId, List<Long> dayIds) {
+        if (dayIds == null || dayIds.isEmpty()) {
+            throw new IllegalArgumentException("At least one day ID must be provided for comparison.");
+        }
+
+        List<EquipmentDailyTest> allDailyTests = equipmentTestEngine.getDailyTests(recordId);
+        List<EquipmentDailyTest> targetDays = allDailyTests.stream()
+                .filter(d -> dayIds.contains(d.getId()))
+                .sorted(Comparator.comparing(EquipmentDailyTest::getTestDate))
+                .collect(Collectors.toList());
+
+        if (targetDays.isEmpty()) {
+            throw new IllegalArgumentException("No matching daily tests found for the given record and day IDs.");
+        }
+
+        List<DayComparisonDTO.DailySummaryDTO> daySummaries = new ArrayList<>();
+        Set<String> allTesters = new HashSet<>();
+
+        for (EquipmentDailyTest dt : targetDays) {
+            List<EquipmentTestAttempt> attempts = dt.getAttempts();
+            int total = attempts.size();
+            int passCount = (int) attempts.stream().filter(a -> a.getResultStatus() == TestStatus.PASS).count();
+            int failCount = total - passCount;
+            double passRate = total > 0 ? ((double) passCount / total) * 100.0 : 0.0;
+
+            String overall = total == 0 ? "NO_ATTEMPTS" : (failCount == 0 ? "ALL_PASS" : "HAS_FAIL");
+            String latestTester = attempts.isEmpty() ? "N/A" : attempts.get(attempts.size() - 1).getTester().getUsername();
+
+            attempts.forEach(a -> {
+                if (a.getTester() != null && a.getTester().getUsername() != null) {
+                    allTesters.add(a.getTester().getUsername());
+                }
+            });
+
+            List<EquipmentTestAttemptDTO> attemptDTOs = attempts.stream()
+                    .map(attempt -> EquipmentTestAttemptDTO.builder()
+                            .id(attempt.getId())
+                            .attemptTime(attempt.getAttemptTime())
+                            .programStatus(attempt.getProgramStatus())
+                            .goStatus(attempt.getGoStatus())
+                            .noGoStatus(attempt.getNoGoStatus())
+                            .resultStatus(attempt.getResultStatus())
+                            .remark(attempt.getRemark())
+                            .testerUsername(attempt.getTester().getUsername())
+                            .build())
+                    .collect(Collectors.toList());
+
+            daySummaries.add(DayComparisonDTO.DailySummaryDTO.builder()
+                    .dailyTestId(dt.getId())
+                    .testDate(dt.getTestDate())
+                    .totalAttempts(total)
+                    .passCount(passCount)
+                    .failCount(failCount)
+                    .passRate(Math.round(passRate * 10.0) / 10.0)
+                    .overallStatus(overall)
+                    .latestTester(latestTester)
+                    .attempts(attemptDTOs)
+                    .build());
+        }
+
+        double passRateDiff = 0.0;
+        if (daySummaries.size() >= 2) {
+            passRateDiff = Math.abs(daySummaries.get(0).getPassRate() - daySummaries.get(1).getPassRate());
+        }
+
+        List<String> paramDifferences = new ArrayList<>();
+        if (daySummaries.size() == 2) {
+            DayComparisonDTO.DailySummaryDTO d1 = daySummaries.get(0);
+            DayComparisonDTO.DailySummaryDTO d2 = daySummaries.get(1);
+            if (!d1.getOverallStatus().equals(d2.getOverallStatus())) {
+                paramDifferences.add(String.format("Trạng thái chung khác nhau: Ngày %s (%s) vs Ngày %s (%s)",
+                        d1.getTestDate(), d1.getOverallStatus(), d2.getTestDate(), d2.getOverallStatus()));
+            }
+            if (d1.getTotalAttempts() != d2.getTotalAttempts()) {
+                paramDifferences.add(String.format("Số lần test khác nhau: %s (%d lượt) vs %s (%d lượt)",
+                        d1.getTestDate(), d1.getTotalAttempts(), d2.getTestDate(), d2.getTotalAttempts()));
+            }
+            if (!d1.getLatestTester().equals(d2.getLatestTester())) {
+                paramDifferences.add(String.format("Kỹ thuật viên khác nhau: %s (%s) vs %s (%s)",
+                        d1.getTestDate(), d1.getLatestTester(), d2.getTestDate(), d2.getLatestTester()));
+            }
+        }
+
+        boolean sameTester = allTesters.size() <= 1 && !allTesters.isEmpty();
+        String summaryText = daySummaries.size() >= 2
+                ? String.format("So sánh giữa %d ngày: Chênh lệch tỷ lệ đạt %.1f%%.", daySummaries.size(), passRateDiff)
+                : "Chi tiết ngày kiểm tra.";
+
+        DayComparisonDTO.ComparisonInsightDTO insights = DayComparisonDTO.ComparisonInsightDTO.builder()
+                .sameTester(sameTester)
+                .allTesters(new ArrayList<>(allTesters))
+                .passRateDifference(Math.round(passRateDiff * 10.0) / 10.0)
+                .parameterDifferences(paramDifferences)
+                .summaryText(summaryText)
+                .build();
+
+        return DayComparisonDTO.builder()
+                .days(daySummaries)
+                .insights(insights)
                 .build();
     }
 }

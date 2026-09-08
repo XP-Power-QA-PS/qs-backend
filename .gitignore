@@ -38,6 +38,7 @@ build/
 **/application-local.properties
 .env
 .env.*
+!.env.example
 
 *.sql
 !src/main/resources/db/migration/*.sql
