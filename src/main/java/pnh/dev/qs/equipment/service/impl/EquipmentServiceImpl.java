@@ -207,23 +207,23 @@ public class EquipmentServiceImpl implements EquipmentService {
             DayComparisonDTO.DailySummaryDTO d1 = daySummaries.get(0);
             DayComparisonDTO.DailySummaryDTO d2 = daySummaries.get(1);
             if (!d1.getOverallStatus().equals(d2.getOverallStatus())) {
-                paramDifferences.add(String.format("Trạng thái chung khác nhau: Ngày %s (%s) vs Ngày %s (%s)",
+                paramDifferences.add(String.format("Overall status difference: Date %s (%s) vs Date %s (%s)",
                         d1.getTestDate(), d1.getOverallStatus(), d2.getTestDate(), d2.getOverallStatus()));
             }
             if (d1.getTotalAttempts() != d2.getTotalAttempts()) {
-                paramDifferences.add(String.format("Số lần test khác nhau: %s (%d lượt) vs %s (%d lượt)",
+                paramDifferences.add(String.format("Total attempts difference: %s (%d attempts) vs %s (%d attempts)",
                         d1.getTestDate(), d1.getTotalAttempts(), d2.getTestDate(), d2.getTotalAttempts()));
             }
             if (!d1.getLatestTester().equals(d2.getLatestTester())) {
-                paramDifferences.add(String.format("Kỹ thuật viên khác nhau: %s (%s) vs %s (%s)",
+                paramDifferences.add(String.format("Different technicians: %s (%s) vs %s (%s)",
                         d1.getTestDate(), d1.getLatestTester(), d2.getTestDate(), d2.getLatestTester()));
             }
         }
 
         boolean sameTester = allTesters.size() <= 1 && !allTesters.isEmpty();
         String summaryText = daySummaries.size() >= 2
-                ? String.format("So sánh giữa %d ngày: Chênh lệch tỷ lệ đạt %.1f%%.", daySummaries.size(), passRateDiff)
-                : "Chi tiết ngày kiểm tra.";
+                ? String.format("Comparison between %d days: Pass rate difference %.1f%%.", daySummaries.size(), passRateDiff)
+                : "Daily test details.";
 
         DayComparisonDTO.ComparisonInsightDTO insights = DayComparisonDTO.ComparisonInsightDTO.builder()
                 .sameTester(sameTester)
