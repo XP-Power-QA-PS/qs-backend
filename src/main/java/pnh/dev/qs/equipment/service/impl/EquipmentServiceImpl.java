@@ -1,6 +1,7 @@
 package pnh.dev.qs.equipment.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pnh.dev.qs.equipment.dto.*;
@@ -146,7 +147,7 @@ public class EquipmentServiceImpl implements EquipmentService {
         List<EquipmentDailyTest> targetDays = allDailyTests.stream()
                 .filter(d -> dayIds.contains(d.getId()))
                 .sorted(Comparator.comparing(EquipmentDailyTest::getTestDate))
-                .collect(Collectors.toList());
+                .toList();
 
         if (targetDays.isEmpty()) {
             throw new IllegalArgumentException("No matching daily tests found for the given record and day IDs.");
@@ -163,10 +164,10 @@ public class EquipmentServiceImpl implements EquipmentService {
             double passRate = total > 0 ? ((double) passCount / total) * 100.0 : 0.0;
 
             String overall = total == 0 ? "NO_ATTEMPTS" : (failCount == 0 ? "ALL_PASS" : "HAS_FAIL");
-            String latestTester = attempts.isEmpty() ? "N/A" : attempts.get(attempts.size() - 1).getTester().getUsername();
+            String latestTester = attempts.isEmpty() ? "N/A" : attempts.getLast().getTester().getUsername();
 
             attempts.forEach(a -> {
-                if (a.getTester() != null && a.getTester().getUsername() != null) {
+                if (a.getTester() != null) {
                     allTesters.add(a.getTester().getUsername());
                 }
             });
@@ -202,6 +203,28 @@ public class EquipmentServiceImpl implements EquipmentService {
             passRateDiff = Math.abs(daySummaries.get(0).getPassRate() - daySummaries.get(1).getPassRate());
         }
 
+        List<String> paramDifferences = getStrings(daySummaries);
+
+        boolean sameTester = allTesters.size() == 1;
+        String summaryText = daySummaries.size() >= 2
+                ? String.format("Comparison between %d days: Pass rate difference %.1f%%.", daySummaries.size(), passRateDiff)
+                : "Daily test details.";
+
+        DayComparisonDTO.ComparisonInsightDTO insights = DayComparisonDTO.ComparisonInsightDTO.builder()
+                .sameTester(sameTester)
+                .allTesters(new ArrayList<>(allTesters))
+                .passRateDifference(Math.round(passRateDiff * 10.0) / 10.0)
+                .parameterDifferences(paramDifferences)
+                .summaryText(summaryText)
+                .build();
+
+        return DayComparisonDTO.builder()
+                .days(daySummaries)
+                .insights(insights)
+                .build();
+    }
+
+    private static @NonNull List<String> getStrings(List<DayComparisonDTO.DailySummaryDTO> daySummaries) {
         List<String> paramDifferences = new ArrayList<>();
         if (daySummaries.size() == 2) {
             DayComparisonDTO.DailySummaryDTO d1 = daySummaries.get(0);
@@ -219,24 +242,7 @@ public class EquipmentServiceImpl implements EquipmentService {
                         d1.getTestDate(), d1.getLatestTester(), d2.getTestDate(), d2.getLatestTester()));
             }
         }
-
-        boolean sameTester = allTesters.size() <= 1 && !allTesters.isEmpty();
-        String summaryText = daySummaries.size() >= 2
-                ? String.format("Comparison between %d days: Pass rate difference %.1f%%.", daySummaries.size(), passRateDiff)
-                : "Daily test details.";
-
-        DayComparisonDTO.ComparisonInsightDTO insights = DayComparisonDTO.ComparisonInsightDTO.builder()
-                .sameTester(sameTester)
-                .allTesters(new ArrayList<>(allTesters))
-                .passRateDifference(Math.round(passRateDiff * 10.0) / 10.0)
-                .parameterDifferences(paramDifferences)
-                .summaryText(summaryText)
-                .build();
-
-        return DayComparisonDTO.builder()
-                .days(daySummaries)
-                .insights(insights)
-                .build();
+        return paramDifferences;
     }
 }
 
