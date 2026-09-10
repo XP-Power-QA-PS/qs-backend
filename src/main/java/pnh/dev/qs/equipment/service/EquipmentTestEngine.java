@@ -19,6 +19,7 @@ public interface EquipmentTestEngine {
 
     List<EquipmentDailyTest> getDailyTests(Long testRecordId);
 
-    EquipmentTestAttempt recordTestAttempt(Long dailyTestId, TestStatus programStatus, TestStatus goStatus, TestStatus noGoStatus, String remark, UserAccount tester);
+    EquipmentTestAttempt recordTestAttempt(Long dailyTestId, TestStatus programStatus, TestStatus goStatus, TestStatus noGoStatus, Boolean machineVerified, String remark, UserAccount tester);
 }
+
 

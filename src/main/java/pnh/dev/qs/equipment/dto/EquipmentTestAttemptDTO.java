@@ -16,7 +16,9 @@ public class EquipmentTestAttemptDTO {
     private TestStatus goStatus;
     private TestStatus noGoStatus;
     private TestStatus resultStatus;
+    private Boolean machineVerified;
     private String remark;
     private String testerUsername;
 }
+
 

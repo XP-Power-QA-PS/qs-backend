@@ -44,7 +44,12 @@ public class EquipmentTestAttempt extends BaseEntity {
     @Column(name = "result_status", nullable = false)
     private TestStatus resultStatus;
 
+    @Column(name = "machine_verified", nullable = false)
+    @Builder.Default
+    private Boolean machineVerified = false;
+
     @Column(name = "remark")
     private String remark;
 }
+
 

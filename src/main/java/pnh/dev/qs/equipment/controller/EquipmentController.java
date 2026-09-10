@@ -19,8 +19,9 @@ public class EquipmentController {
     private final EquipmentService equipmentService;
 
     @GetMapping("/floors")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<List<FloorDTO>> getAllFloors() {
+
         return ResponseEntity.ok(equipmentService.getAllFloors());
     }
 
@@ -31,7 +32,7 @@ public class EquipmentController {
     }
 
     @PostMapping("/test")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Void> performTest(@Valid @RequestBody TestRecordRequest request, Authentication authentication) {
         equipmentService.performTest(request, authentication.getName());
         return ResponseEntity.ok().build();
@@ -50,16 +51,17 @@ public class EquipmentController {
     }
 
     @PostMapping("/records/{recordId}/daily-tests")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<EquipmentDailyTestDTO> createDailyTest(@PathVariable Long recordId, Authentication authentication) {
         return ResponseEntity.ok(equipmentService.createDailyTest(recordId, authentication.getName()));
     }
 
     @PostMapping("/daily-tests/{dailyTestId}/attempts")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<EquipmentTestAttemptDTO> addTestAttempt(@PathVariable Long dailyTestId, @Valid @RequestBody CreateTestAttemptRequest request, Authentication authentication) {
         return ResponseEntity.ok(equipmentService.addTestAttempt(dailyTestId, request, authentication.getName()));
     }
+
 
     @GetMapping("/records/{recordId}/compare-days")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")

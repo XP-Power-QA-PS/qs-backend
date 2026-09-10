@@ -90,6 +90,7 @@ public class EquipmentServiceImpl implements EquipmentService {
                                         .goStatus(attempt.getGoStatus())
                                         .noGoStatus(attempt.getNoGoStatus())
                                         .resultStatus(attempt.getResultStatus())
+                                        .machineVerified(attempt.getMachineVerified())
                                         .remark(attempt.getRemark())
                                         .testerUsername(attempt.getTester().getUsername())
                                         .build())
@@ -121,6 +122,7 @@ public class EquipmentServiceImpl implements EquipmentService {
                 request.getProgramStatus(),
                 request.getGoStatus(),
                 request.getNoGoStatus(),
+                request.getConfirmedMachineCheck(),
                 request.getRemark(),
                 tester
         );
@@ -132,10 +134,12 @@ public class EquipmentServiceImpl implements EquipmentService {
                 .goStatus(attempt.getGoStatus())
                 .noGoStatus(attempt.getNoGoStatus())
                 .resultStatus(attempt.getResultStatus())
+                .machineVerified(attempt.getMachineVerified())
                 .remark(attempt.getRemark())
                 .testerUsername(attempt.getTester().getUsername())
                 .build();
     }
+
 
     @Override
     public DayComparisonDTO compareDays(Long recordId, List<Long> dayIds) {
@@ -180,9 +184,11 @@ public class EquipmentServiceImpl implements EquipmentService {
                             .goStatus(attempt.getGoStatus())
                             .noGoStatus(attempt.getNoGoStatus())
                             .resultStatus(attempt.getResultStatus())
+                            .machineVerified(attempt.getMachineVerified())
                             .remark(attempt.getRemark())
                             .testerUsername(attempt.getTester().getUsername())
                             .build())
+
                     .collect(Collectors.toList());
 
             daySummaries.add(DayComparisonDTO.DailySummaryDTO.builder()
