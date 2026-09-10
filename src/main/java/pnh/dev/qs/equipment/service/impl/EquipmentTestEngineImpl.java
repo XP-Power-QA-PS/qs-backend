@@ -97,7 +97,11 @@ public class EquipmentTestEngineImpl implements EquipmentTestEngine {
 
     @Override
     @Transactional
-    public EquipmentTestAttempt recordTestAttempt(Long dailyTestId, TestStatus programStatus, TestStatus goStatus, TestStatus noGoStatus, String remark, UserAccount tester) {
+    public EquipmentTestAttempt recordTestAttempt(Long dailyTestId, TestStatus programStatus, TestStatus goStatus, TestStatus noGoStatus, Boolean machineVerified, String remark, UserAccount tester) {
+        if (!Boolean.TRUE.equals(machineVerified)) {
+            throw new BadRequestException("Machine verification confirmation is required before recording test attempt.");
+        }
+
         EquipmentDailyTest dailyTest = dailyTestRepository.findById(dailyTestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Daily test not found"));
 
@@ -113,6 +117,7 @@ public class EquipmentTestEngineImpl implements EquipmentTestEngine {
                 .goStatus(goStatus)
                 .noGoStatus(noGoStatus)
                 .resultStatus(resultStatus)
+                .machineVerified(machineVerified)
                 .remark(remark)
                 .tester(tester)
                 .build();
@@ -121,3 +126,4 @@ public class EquipmentTestEngineImpl implements EquipmentTestEngine {
         return testAttemptRepository.save(attempt);
     }
 }
+
