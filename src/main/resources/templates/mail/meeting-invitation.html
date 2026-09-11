@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư mời họp đánh giá khiếu nại khách hàng</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 650px;
+            margin: 24px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #006194 0%, #004b73 100%);
+            color: #ffffff;
+            padding: 28px 32px;
+            text-align: left;
+        }
+        .header .badge {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        .content {
+            padding: 32px;
+        }
+        .intro-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #334155;
+            margin-bottom: 24px;
+        }
+        .meeting-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 5px solid #006194;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .meeting-box h2 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: #004b73;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .meeting-item {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .meeting-item:last-child {
+            margin-bottom: 0;
+        }
+        .meeting-label {
+            font-weight: 600;
+            color: #1e3a8a;
+            min-width: 120px;
+        }
+        .meeting-val {
+            color: #0f172a;
+            font-weight: 500;
+        }
+        .agenda-text {
+            white-space: pre-line;
+            color: #1e293b;
+            background-color: #ffffff;
+            border: 1px solid #dbeafe;
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-top: 6px;
+            font-size: 13.5px;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 24px 0 12px 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 13.5px;
+        }
+        .details-table th, .details-table td {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .details-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            width: 32%;
+        }
+        .details-table td {
+            color: #0f172a;
+        }
+        .recipients-list {
+            font-size: 13px;
+            color: #475569;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+        }
+        .recipients-list p {
+            margin: 4px 0;
+        }
+        .footer {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 20px 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .calendar-notice {
+            background-color: #fefce8;
+            border: 1px solid #fef08a;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: #854d0e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="badge">QS Quality System • Preliminary Review</div>
+            <h1>THƯ MỜI HỌP ĐÁNH GIÁ KHIẾU NẠI KHÁCH HÀNG</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="intro-text">
+                Kính gửi các thành viên đội ngũ liên chức năng (Cross-Functional Team),<br>
+                Hệ thống chất lượng QS kính gửi thông tin cuộc họp đánh giá sơ bộ (Preliminary Review) cho hồ sơ khiếu nại khách hàng: 
+                <strong th:text="${trackingNo}">2026-09-0001</strong>.
+            </p>
+
+            <!-- 4 Thông tin cốt lõi cuộc họp -->
+            <div class="meeting-box">
+                <h2>THÔNG TIN CUỘC HỌP (MEETING DETAILS)</h2>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 6px 0; font-weight: 600; color: #004b73; width: 130px;">📅 Ngày họp:</td>
+                        <td style="padding: 6px 0; font-weight: 700; color: #0f172a; font-size: 15px;" th:text="${meetingDate}">12/09/2026</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; font-weight: 600; color: #004b73;">⏰ Giờ họp:</td>
+                        <td style="padding: 6px 0; font-weight: 700; color: #0f172a; font-size: 15px;">
+                            <span th:text="${startTime}">09:30</span> 
+                            <span th:if="${endTime != null}"> - <span th:text="${endTime}">10:30</span></span>
+                            <span style="font-weight: 400; font-size: 12px; color: #64748b;">(GMT+7)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; font-weight: 600; color: #004b73;">📍 Phòng họp:</td>
+                        <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">
+                            <span th:text="${roomLocation}">Meeting Room A201 / Teams Link</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; font-weight: 600; color: #004b73; vertical-align: top;">📝 Nội dung:</td>
+                        <td style="padding: 6px 0;">
+                            <div class="agenda-text" th:text="${agenda}">
+                                Đánh giá sơ bộ tính hợp lệ của khiếu nại, thảo luận nguyên nhân tạm thời và thống nhất hành động ngăn chặn (Containment Action).
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${organizerName != null}">
+                        <td style="padding: 6px 0; font-weight: 600; color: #004b73;">👤 Người triệu tập:</td>
+                        <td style="padding: 6px 0; font-weight: 600; color: #0f172a;">
+                            <span th:text="${organizerName}">Nguyen Van A</span>
+                            <span th:if="${organizerEmail != null}" style="font-weight: 400; font-size: 13px; color: #64748b;" th:text="' (' + ${organizerEmail} + ')'"></span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Notice about iCalendar attachment -->
+            <div class="calendar-notice">
+                📌 <strong>Lưu ý:</strong> File lịch đính kèm <strong>(meeting-invite.ics)</strong> đã được gửi cùng email này. 
+                Quý anh/chị có thể bấm <strong>Accept / Add to Calendar</strong> trực tiếp trên Microsoft Outlook hoặc Google Calendar để tự động thêm vào lịch làm việc.
+            </div>
+
+            <!-- Tóm tắt khiếu nại khách hàng -->
+            <div class="section-title">TÓM TẮT HỒ SƠ KHIẾU NẠI (COMPLAINT SUMMARY)</div>
+            <table class="details-table">
+                <tr>
+                    <th>Mã theo dõi (Tracking No)</th>
+                    <td><strong th:text="${trackingNo}">2026-09-0001</strong></td>
+                </tr>
+                <tr th:if="${customerName != null}">
+                    <th>Khách hàng (Customer)</th>
+                    <td th:text="${customerName}">Customer ABC</td>
+                </tr>
+                <tr th:if="${model != null}">
+                    <th>Dòng sản phẩm (Model)</th>
+                    <td th:text="${model}">Model XYZ</td>
+                </tr>
+                <tr th:if="${issueDescription != null}">
+                    <th>Hiện tượng lỗi (Issue)</th>
+                    <td th:text="${issueDescription}">Chi tiết hiện tượng lỗi khách hàng phản hồi...</td>
+                </tr>
+            </table>
+
+            <!-- Danh sách người nhận -->
+            <div class="recipients-list" th:if="${recipients != null and !recipients.isEmpty()}">
+                <p><strong>👥 Danh sách thành viên được triệu tập:</strong></p>
+                <div th:each="recipient : ${recipients}">
+                    • <span th:text="${recipient.name != null ? recipient.name : recipient.email}">Nguyen Van A</span>
+                    <span th:if="${recipient.department != null}"> (<span th:text="${recipient.department}">PE</span>)</span>
+                    - <span style="font-size: 11px; color: #006194; font-weight: 600;" th:text="${recipient.recipientType}">TO</span>
+                </div>
+            </div>
+
+            <p style="font-size: 13.5px; line-height: 1.6; color: #475569;">
+                Kính đề nghị đại diện các bộ phận tham dự đầy đủ và đúng giờ để đảm bảo tiến độ xử lý khiếu nại theo chuẩn chất lượng nhà máy.<br>
+                Trân trọng,
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Đây là email thông báo tự động từ Hệ thống Quản lý Chất lượng QS (Quality System). Vui lòng không phản hồi trực tiếp vào địa chỉ email này.
+        </div>
+    </div>
+</body>
+</html>
