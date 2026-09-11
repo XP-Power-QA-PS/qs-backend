@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long>, JpaSpecificationExecutor<UserAccount> {
@@ -16,6 +17,14 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long>,
     Optional<UserAccount> findByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+
+    @Query("SELECT DISTINCT u FROM UserAccount u LEFT JOIN FETCH u.profile p LEFT JOIN FETCH u.roles r " +
+           "WHERE u.isEnabled = true AND (:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<UserAccount> searchActiveRecipients(@Param("keyword") String keyword);
 
     @Query("SELECT u FROM UserAccount u WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<UserAccount> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);

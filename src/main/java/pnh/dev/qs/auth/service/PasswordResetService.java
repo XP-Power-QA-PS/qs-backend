@@ -28,6 +28,7 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
+    private final pnh.dev.qs.user.service.UserEmailService userEmailService;
 
     @Value("${app.password-reset.expiration-minutes:30}")
     private long expirationMinutes;
@@ -47,8 +48,9 @@ public class PasswordResetService {
 
         passwordResetTokenRepository.save(resetToken);
 
-        // TODO: Send email with rawToken
-        // For now, return rawToken so we can test via API
+        // Send reset email to user asynchronously
+        userEmailService.sendPasswordResetEmail(email, rawToken);
+
         return rawToken;
     }
 
