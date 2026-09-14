@@ -71,10 +71,9 @@ public class AuthController {
         String ipAddress = getClientIp(httpRequest);
         refreshTokenService.checkRateLimit("forgot-password", ipAddress, 3, 15);
         
-        String resetToken = passwordResetService.generateResetToken(request.getEmail());
+        passwordResetService.generateResetToken(request.getEmail());
         
-        // Return token directly for API testing (in production this would be sent via email)
-        return ResponseEntity.ok(Map.of("message", "Password reset token generated", "token", resetToken));
+        return ResponseEntity.ok(Map.of("message", "Nếu tài khoản tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn."));
     }
 
     @PostMapping("/reset-password")
