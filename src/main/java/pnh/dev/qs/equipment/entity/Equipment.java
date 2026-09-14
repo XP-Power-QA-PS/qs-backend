@@ -24,6 +24,9 @@ public class Equipment extends AuditableEntity {
     @Column(name = "equipment_name", nullable = false, length = 200)
     private String equipmentName;
 
+    @Column(name = "serial_number", length = 100)
+    private String serialNumber;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "floor_id", nullable = false)
     private Floor floor;
