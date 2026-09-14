@@ -39,8 +39,13 @@ public class ComplaintSummaryDTO {
     private String defectName;
     private Integer quantity;
     private InternalExternal internalExternal;
+    private String capaNo;
+    private String assignedTeam;
+    private String assignedPerson;
+    private String priority;
     private ComplaintStatus status;
     private String actionStatus;
+    private String effectivenessStatus;
     private String finalStatus;
     private Long ageingOpen;
     private Long ageingClosed;

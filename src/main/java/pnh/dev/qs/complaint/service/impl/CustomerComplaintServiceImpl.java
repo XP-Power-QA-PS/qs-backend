@@ -25,6 +25,7 @@ import pnh.dev.qs.complaint.enums.InternalExternal;
 import pnh.dev.qs.complaint.repository.ComplaintMeetingRepository;
 import pnh.dev.qs.complaint.repository.CustomerComplaintRepository;
 import pnh.dev.qs.complaint.service.ComplaintTrackingNoGenerator;
+import pnh.dev.qs.complaint.service.CapaNoGenerator;
 import pnh.dev.qs.complaint.service.CustomerComplaintService;
 import pnh.dev.qs.exception.custom.ResourceNotFoundException;
 import pnh.dev.qs.user.dto.EmailSendResultDTO;
@@ -63,6 +64,7 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
     private final CustomerComplaintRepository complaintRepository;
     private final ComplaintMeetingRepository meetingRepository;
     private final ComplaintTrackingNoGenerator trackingNoGenerator;
+    private final CapaNoGenerator capaNoGenerator;
     private final UserEmailService userEmailService;
     private final ObjectMapper objectMapper;
 
@@ -100,8 +102,15 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .quantity(request.getQuantity())
                 .serialNumbers(request.getSerialNumbers())
                 .pictureUrls(request.getPictureUrls())
+                // Phase 2: Assignment & Priority
+                .assignedTeam(request.getAssignedTeam())
+                .assignedPerson(request.getAssignedPerson())
+                .priority(request.getPriority() != null ? request.getPriority() : "MEDIUM")
+                .assignmentDeadline(request.getAssignmentDeadline() != null ? request.getAssignmentDeadline() : receivedDate.plusDays(1))
+                .containmentStatus("IN_PROGRESS")
                 .status(ComplaintStatus.RECEIVED)
                 .actionStatus("OPEN")
+                .effectivenessStatus("PENDING")
                 .build();
 
         CustomerComplaint saved = complaintRepository.save(complaint);
@@ -305,6 +314,12 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getSerialNumbers() != null) complaint.setSerialNumbers(request.getSerialNumbers());
         if (request.getPictureUrls() != null) complaint.setPictureUrls(request.getPictureUrls());
 
+        // Phase 2: Assignment & Priority
+        if (request.getAssignedTeam() != null) complaint.setAssignedTeam(request.getAssignedTeam());
+        if (request.getAssignedPerson() != null) complaint.setAssignedPerson(request.getAssignedPerson());
+        if (request.getPriority() != null) complaint.setPriority(request.getPriority());
+        if (request.getAssignmentDeadline() != null) complaint.setAssignmentDeadline(request.getAssignmentDeadline());
+
         // Phase 3: Containment
         if (request.getContainmentAction() != null) {
             complaint.setContainmentAction(request.getContainmentAction());
@@ -312,15 +327,45 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getContainmentDueDate() != null) {
             complaint.setContainmentDueDate(request.getContainmentDueDate());
         }
+        if (request.getContainmentOwner() != null) {
+            complaint.setContainmentOwner(request.getContainmentOwner());
+        }
+        if (request.getContainmentCompletionDate() != null) {
+            complaint.setContainmentCompletionDate(request.getContainmentCompletionDate());
+        }
+        if (request.getContainmentStatus() != null) {
+            complaint.setContainmentStatus(request.getContainmentStatus());
+        }
 
         // Phase 4: Root Cause
         if (request.getRootCause() != null) {
             complaint.setRootCause(request.getRootCause());
         }
+        if (request.getRootCauseCategory() != null) {
+            complaint.setRootCauseCategory(request.getRootCauseCategory());
+        }
+        if (request.getRootCauseOwner() != null) {
+            complaint.setRootCauseOwner(request.getRootCauseOwner());
+        }
+        if (request.getRootCauseCompletionDate() != null) {
+            complaint.setRootCauseCompletionDate(request.getRootCauseCompletionDate());
+        }
 
         // Phase 5 & 6: CAPA
+        if (request.getCorrectiveAction() != null) {
+            complaint.setCorrectiveAction(request.getCorrectiveAction());
+        }
+        if (request.getPreventiveAction() != null) {
+            complaint.setPreventiveAction(request.getPreventiveAction());
+        }
         if (request.getCorrectivePreventiveAction() != null) {
             complaint.setCorrectivePreventiveAction(request.getCorrectivePreventiveAction());
+        } else if (request.getCorrectiveAction() != null || request.getPreventiveAction() != null) {
+            // Auto-sync composite field for backward compatibility & Excel template export
+            String cAct = complaint.getCorrectiveAction() != null ? "[Corrective]: " + complaint.getCorrectiveAction() : "";
+            String pAct = complaint.getPreventiveAction() != null ? "[Preventive]: " + complaint.getPreventiveAction() : "";
+            String combined = (cAct + "\n\n" + pAct).trim();
+            complaint.setCorrectivePreventiveAction(combined);
         }
         if (request.getActionOwner() != null) {
             complaint.setActionOwner(request.getActionOwner());
@@ -331,13 +376,43 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getActionStatus() != null) {
             complaint.setActionStatus(request.getActionStatus());
         }
+        if (request.getCapaCompletionDate() != null) {
+            complaint.setCapaCompletionDate(request.getCapaCompletionDate());
+        }
 
-        // Phase 7: Closure
+        // Auto-generate CAPA No if entering Phase 5 / submitting CAPA details and no CAPA No exists yet
+        boolean isCapaActive = (request.getStatus() != null && request.getStatus().ordinal() >= ComplaintStatus.CAPA_COMMITTED.ordinal())
+                || (complaint.getCorrectiveAction() != null && !complaint.getCorrectiveAction().isBlank())
+                || (complaint.getCorrectivePreventiveAction() != null && !complaint.getCorrectivePreventiveAction().isBlank());
+        if (isCapaActive && (complaint.getCapaNo() == null || complaint.getCapaNo().isBlank())) {
+            String generatedCapaNo = capaNoGenerator.generateNextCapaNo(complaint.getReceivedDate());
+            complaint.setCapaNo(generatedCapaNo);
+            log.info("Auto-assigned CAPA number {} to complaint {}", generatedCapaNo, complaint.getTrackingNo());
+        }
+
+        // Phase 7: 30-Day Effectiveness Verification
+        if (request.getEffectivenessStatus() != null) {
+            complaint.setEffectivenessStatus(request.getEffectivenessStatus());
+        }
+        if (request.getEffectivenessVerifiedDate() != null) {
+            complaint.setEffectivenessVerifiedDate(request.getEffectivenessVerifiedDate());
+        }
+        if (request.getEffectivenessVerifiedBy() != null) {
+            complaint.setEffectivenessVerifiedBy(request.getEffectivenessVerifiedBy());
+        }
+        if (request.getEffectivenessRemarks() != null) {
+            complaint.setEffectivenessRemarks(request.getEffectivenessRemarks());
+        }
+
+        // Phase 8: Closure
         if (request.getClosureDate() != null) {
             complaint.setClosureDate(request.getClosureDate());
         }
         if (request.getFinalStatus() != null) {
             complaint.setFinalStatus(request.getFinalStatus());
+        }
+        if (request.getFinalEvidence() != null) {
+            complaint.setFinalEvidence(request.getFinalEvidence());
         }
         if (request.getRemarks() != null) {
             complaint.setRemarks(request.getRemarks());
@@ -355,9 +430,12 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
             // Smart auto-progression based on submitted content if not explicitly provided
             if (complaint.getClosureDate() != null) {
                 complaint.setStatus(ComplaintStatus.CLOSED);
-            } else if ("VERIFYING".equalsIgnoreCase(complaint.getActionStatus()) || "EFFECTIVENESS_VERIFYING".equalsIgnoreCase(complaint.getActionStatus())) {
+            } else if ("EFFECTIVE".equalsIgnoreCase(complaint.getEffectivenessStatus())
+                    || "VERIFYING".equalsIgnoreCase(complaint.getActionStatus())
+                    || "EFFECTIVENESS_VERIFYING".equalsIgnoreCase(complaint.getActionStatus())) {
                 complaint.setStatus(ComplaintStatus.EFFECTIVENESS_VERIFYING);
-            } else if (complaint.getCorrectivePreventiveAction() != null && !complaint.getCorrectivePreventiveAction().isBlank()) {
+            } else if ((complaint.getCorrectivePreventiveAction() != null && !complaint.getCorrectivePreventiveAction().isBlank())
+                    || (complaint.getCorrectiveAction() != null && !complaint.getCorrectiveAction().isBlank())) {
                 if (complaint.getStatus().ordinal() < ComplaintStatus.CAPA_COMMITTED.ordinal()) {
                     complaint.setStatus(ComplaintStatus.CAPA_COMMITTED);
                 }
@@ -392,6 +470,7 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .id(c.getId())
                 .trackingNo(c.getTrackingNo())
                 .controlNo(c.getControlNo())
+                .capaNo(c.getCapaNo())
                 .year(c.getYear())
                 .month(c.getMonth())
                 .week(c.getWeek())
@@ -404,8 +483,12 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .defectName(c.getDefectName())
                 .quantity(c.getQuantity())
                 .internalExternal(c.getInternalExternal())
+                .assignedTeam(c.getAssignedTeam())
+                .assignedPerson(c.getAssignedPerson())
+                .priority(c.getPriority())
                 .status(c.getStatus())
                 .actionStatus(c.getActionStatus())
+                .effectivenessStatus(c.getEffectivenessStatus())
                 .finalStatus(c.getFinalStatus())
                 .ageingOpen(ageingOpen)
                 .ageingClosed(ageingClosed)
@@ -455,15 +538,39 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .quantity(c.getQuantity())
                 .serialNumbers(c.getSerialNumbers())
                 .pictureUrls(c.getPictureUrls())
-                .rootCause(c.getRootCause())
+                // Phase 2: Assignment & Priority
+                .assignedTeam(c.getAssignedTeam())
+                .assignedPerson(c.getAssignedPerson())
+                .priority(c.getPriority())
+                .assignmentDeadline(c.getAssignmentDeadline())
+                // Phase 3: Containment
                 .containmentAction(c.getContainmentAction())
                 .containmentDueDate(c.getContainmentDueDate())
+                .containmentOwner(c.getContainmentOwner())
+                .containmentCompletionDate(c.getContainmentCompletionDate())
+                .containmentStatus(c.getContainmentStatus())
+                // Phase 4: Root Cause
+                .rootCause(c.getRootCause())
+                .rootCauseCategory(c.getRootCauseCategory())
+                .rootCauseOwner(c.getRootCauseOwner())
+                .rootCauseCompletionDate(c.getRootCauseCompletionDate())
+                // Phase 5 & 6: CAPA
+                .correctiveAction(c.getCorrectiveAction())
+                .preventiveAction(c.getPreventiveAction())
                 .correctivePreventiveAction(c.getCorrectivePreventiveAction())
                 .actionOwner(c.getActionOwner())
                 .actionDueDate(c.getActionDueDate())
                 .actionStatus(c.getActionStatus())
+                .capaCompletionDate(c.getCapaCompletionDate())
+                // Phase 7: 30-Day Effectiveness Verification
+                .effectivenessStatus(c.getEffectivenessStatus())
+                .effectivenessVerifiedDate(c.getEffectivenessVerifiedDate())
+                .effectivenessVerifiedBy(c.getEffectivenessVerifiedBy())
+                .effectivenessRemarks(c.getEffectivenessRemarks())
+                // Phase 8: Closure
                 .status(c.getStatus())
                 .finalStatus(c.getFinalStatus())
+                .finalEvidence(c.getFinalEvidence())
                 .remarks(c.getRemarks())
                 .ageingOpen(ageingOpen)
                 .ageingClosed(ageingClosed)

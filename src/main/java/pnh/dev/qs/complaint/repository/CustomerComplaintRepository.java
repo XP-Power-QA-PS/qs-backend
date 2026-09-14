@@ -24,6 +24,10 @@ public interface CustomerComplaintRepository extends JpaRepository<CustomerCompl
                    "FROM customer_complaints WHERE year = :year", nativeQuery = true)
     Integer findMaxSequenceByYear(@Param("year") Integer year);
 
+    @Query(value = "SELECT COALESCE(MAX(CAST(SPLIT_PART(capa_no, '-', 3) AS INTEGER)), 0) " +
+                   "FROM customer_complaints WHERE year = :year AND capa_no LIKE 'CAPA-%'", nativeQuery = true)
+    Integer findMaxCapaSequenceByYear(@Param("year") Integer year);
+
     Page<CustomerComplaint> findByYear(Integer year, Pageable pageable);
 
     Page<CustomerComplaint> findByYearAndStatus(Integer year, ComplaintStatus status, Pageable pageable);
