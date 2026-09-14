@@ -53,21 +53,51 @@ public class ComplaintResponse {
     private String serialNumbers;
     private String pictureUrls;
 
-    private String rootCause;
-    private String containmentAction;
+    // Phase 2: Assignment & Priority
+    private String assignedTeam;
+    private String assignedPerson;
+    private String priority;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate assignmentDeadline;
 
+    // Phase 3: Containment
+    private String containmentAction;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate containmentDueDate;
+    private String containmentOwner;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate containmentCompletionDate;
+    private String containmentStatus;
 
+    // Phase 4: Root Cause
+    private String rootCause;
+    private String rootCauseCategory;
+    private String rootCauseOwner;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate rootCauseCompletionDate;
+
+    // Phase 5 & 6: CAPA
+    private String correctiveAction;
+    private String preventiveAction;
     private String correctivePreventiveAction;
     private String actionOwner;
-
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate actionDueDate;
-
     private String actionStatus;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate capaCompletionDate;
+
+    // Phase 7: 30-Day Effectiveness Verification
+    private String effectivenessStatus;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate effectivenessVerifiedDate;
+    private String effectivenessVerifiedBy;
+    private String effectivenessRemarks;
+
+    // Phase 8: Closure
     private ComplaintStatus status;
     private String finalStatus;
+    private String finalEvidence;
     private String remarks;
 
     private Long ageingOpen;

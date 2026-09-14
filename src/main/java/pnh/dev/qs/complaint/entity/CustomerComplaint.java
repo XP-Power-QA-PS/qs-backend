@@ -103,14 +103,56 @@ public class CustomerComplaint extends AuditableEntity {
     @Column(name = "picture_urls", columnDefinition = "TEXT")
     private String pictureUrls;
 
-    @Column(name = "root_cause", columnDefinition = "TEXT")
-    private String rootCause;
+    // Phase 2: Assignment & Priority
+    @Column(name = "assigned_team", length = 100)
+    private String assignedTeam;
 
+    @Column(name = "assigned_person", length = 100)
+    private String assignedPerson;
+
+    @Column(name = "priority", length = 20)
+    @Builder.Default
+    private String priority = "MEDIUM";
+
+    @Column(name = "assignment_deadline")
+    private LocalDate assignmentDeadline;
+
+    // Phase 3: Containment
     @Column(name = "containment_action", columnDefinition = "TEXT")
     private String containmentAction;
 
     @Column(name = "containment_due_date")
     private LocalDate containmentDueDate;
+
+    @Column(name = "containment_owner", length = 100)
+    private String containmentOwner;
+
+    @Column(name = "containment_completion_date")
+    private LocalDate containmentCompletionDate;
+
+    @Column(name = "containment_status", length = 50)
+    @Builder.Default
+    private String containmentStatus = "IN_PROGRESS";
+
+    // Phase 4: Root Cause
+    @Column(name = "root_cause", columnDefinition = "TEXT")
+    private String rootCause;
+
+    @Column(name = "root_cause_category", length = 100)
+    private String rootCauseCategory;
+
+    @Column(name = "root_cause_owner", length = 100)
+    private String rootCauseOwner;
+
+    @Column(name = "root_cause_completion_date")
+    private LocalDate rootCauseCompletionDate;
+
+    // Phase 5 & 6: CAPA
+    @Column(name = "corrective_action", columnDefinition = "TEXT")
+    private String correctiveAction;
+
+    @Column(name = "preventive_action", columnDefinition = "TEXT")
+    private String preventiveAction;
 
     @Column(name = "corrective_preventive_action", columnDefinition = "TEXT")
     private String correctivePreventiveAction;
@@ -125,6 +167,24 @@ public class CustomerComplaint extends AuditableEntity {
     @Builder.Default
     private String actionStatus = "OPEN";
 
+    @Column(name = "capa_completion_date")
+    private LocalDate capaCompletionDate;
+
+    // Phase 7: Effectiveness Verification (30 days)
+    @Column(name = "effectiveness_status", length = 50)
+    @Builder.Default
+    private String effectivenessStatus = "PENDING";
+
+    @Column(name = "effectiveness_verified_date")
+    private LocalDate effectivenessVerifiedDate;
+
+    @Column(name = "effectiveness_verified_by", length = 100)
+    private String effectivenessVerifiedBy;
+
+    @Column(name = "effectiveness_remarks", columnDefinition = "TEXT")
+    private String effectivenessRemarks;
+
+    // Lifecycle Status & Closure
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     @Builder.Default
@@ -132,6 +192,9 @@ public class CustomerComplaint extends AuditableEntity {
 
     @Column(name = "final_status", length = 50)
     private String finalStatus;
+
+    @Column(name = "final_evidence", columnDefinition = "TEXT")
+    private String finalEvidence;
 
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
