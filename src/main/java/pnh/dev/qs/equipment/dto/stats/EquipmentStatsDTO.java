@@ -25,6 +25,8 @@ public class EquipmentStatsDTO {
 
     private String equipmentName;
 
+    private String serialNumber;
+
     private String floorName;
 
     /** KPI tổng quan của thiết bị trong kỳ */

@@ -327,6 +327,7 @@ public class GoNoGoStatsServiceImpl implements GoNoGoStatsService {
                 .equipmentId(equipmentId)
                 .equipmentCode(equipment.getEquipmentCode())
                 .equipmentName(equipment.getEquipmentName())
+                .serialNumber(equipment.getSerialNumber())
                 .floorName(equipment.getFloor() != null ? equipment.getFloor().getName() : "")
                 .summary(eqSummary)
                 .monthlyTrend(monthlyTrend)

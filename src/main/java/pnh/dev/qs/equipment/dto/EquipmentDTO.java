@@ -7,5 +7,6 @@ public class EquipmentDTO {
     private Long id;
     private String equipmentCode;
     private String equipmentName;
+    private String serialNumber;
     private Long floorId;
 }

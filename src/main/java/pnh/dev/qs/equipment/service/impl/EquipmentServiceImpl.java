@@ -49,6 +49,7 @@ public class EquipmentServiceImpl implements EquipmentService {
                     dto.setId(equipment.getId());
                     dto.setEquipmentCode(equipment.getEquipmentCode());
                     dto.setEquipmentName(equipment.getEquipmentName());
+                    dto.setSerialNumber(equipment.getSerialNumber());
                     dto.setFloorId(equipment.getFloor().getId());
                     return dto;
                 })
