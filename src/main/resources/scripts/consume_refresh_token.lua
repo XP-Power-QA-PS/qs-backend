@@ -7,11 +7,20 @@ if value == false then
 end
 
 local decoded = cjson.decode(value)
+local currentTime = tonumber(redis.call('TIME')[1])
 
 if decoded.status == 'active' then
     decoded.status = 'consumed'
+    decoded.consumedAt = currentTime
     redis.call('SETEX', key, 300, cjson.encode(decoded))
     return value
 else
-    return 'REUSE_DETECTED:' .. decoded.userId
+    -- Grace period: allow repeated refresh within 15 seconds to tolerate multi-tab concurrency
+    local consumedAt = tonumber(decoded.consumedAt)
+    if consumedAt and (currentTime - consumedAt) <= 15 then
+        return value
+    else
+        return 'REUSE_DETECTED:' .. decoded.userId
+    end
 end
+

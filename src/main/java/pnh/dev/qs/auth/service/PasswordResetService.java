@@ -29,6 +29,7 @@ public class PasswordResetService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final pnh.dev.qs.user.service.UserEmailService userEmailService;
+    private final pnh.dev.qs.security.CustomUserDetailsService customUserDetailsService;
 
     @Value("${app.password-reset.expiration-minutes:30}")
     private long expirationMinutes;
@@ -77,6 +78,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(resetToken);
 
         refreshTokenService.revokeAllUserTokens(user.getId());
+        customUserDetailsService.evictUserCache(user.getId());
     }
 
     private String hashToken(String rawToken) {

@@ -17,6 +17,7 @@ import pnh.dev.qs.user.entity.UserProfile;
 import pnh.dev.qs.user.repository.RoleRepository;
 import pnh.dev.qs.user.repository.UserAccountRepository;
 import pnh.dev.qs.user.repository.UserProfileRepository;
+import pnh.dev.qs.security.CustomUserDetailsService;
 import pnh.dev.qs.user.service.UserManagementService;
 
 import java.time.Instant;
@@ -31,6 +32,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     private final UserProfileRepository userProfileRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
     @Transactional
@@ -99,7 +101,9 @@ public class UserManagementServiceImpl implements UserManagementService {
             user.setRoles(roles);
         }
 
-        return userAccountRepository.save(user);
+        UserAccount updated = userAccountRepository.save(user);
+        customUserDetailsService.evictUserCache(userId);
+        return updated;
     }
 
     @Override
@@ -108,6 +112,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         UserAccount user = getUserById(userId);
         user.setDeletedAt(Instant.now());
         userAccountRepository.save(user);
+        customUserDetailsService.evictUserCache(userId);
     }
 
     @Override
@@ -116,12 +121,14 @@ public class UserManagementServiceImpl implements UserManagementService {
         userAccountRepository.deleteUserProfileByUserId(userId);
         userAccountRepository.deleteUserRolesByUserId(userId);
         userAccountRepository.anonymizeUser(userId);
+        customUserDetailsService.evictUserCache(userId);
     }
 
     @Override
     @Transactional
     public void restoreUser(Long userId) {
         userAccountRepository.restoreUser(userId);
+        customUserDetailsService.evictUserCache(userId);
     }
 
     @Override
@@ -205,6 +212,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         if (request.getBio() != null) profile.setBio(request.getBio());
 
         userProfileRepository.save(profile);
+        customUserDetailsService.evictUserCache(userId);
         return mapToDTO(user);
     }
 
