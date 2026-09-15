@@ -35,12 +35,20 @@ import pnh.dev.qs.user.service.UserEmailService;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+
+import pnh.dev.qs.storage.dto.FileCommitRequest;
+import pnh.dev.qs.storage.dto.FileCommitResponse;
+import pnh.dev.qs.storage.service.StorageService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -67,6 +75,7 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
     private final CapaNoGenerator capaNoGenerator;
     private final UserEmailService userEmailService;
     private final ObjectMapper objectMapper;
+    private final StorageService storageService;
 
     @Override
     @Transactional
@@ -79,6 +88,31 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         int week = receivedDate.get(WeekFields.ISO.weekOfWeekBasedYear());
 
         String trackingNo = trackingNoGenerator.generateNextTrackingNo(receivedDate);
+
+        // Xử lý commit các file ảnh tạm từ tmp/ sang thư mục chính thức của khiếu nại
+        List<String> pictureUrlsList = new ArrayList<>();
+        if (request.getPictureUrls() != null && !request.getPictureUrls().isBlank()) {
+            pictureUrlsList.add(request.getPictureUrls().trim());
+        }
+        if (request.getPictureTmpKeys() != null && !request.getPictureTmpKeys().isEmpty()) {
+            String targetFolder = "complaints/" + year + "/" + trackingNo + "/defects";
+            for (String tmpKey : request.getPictureTmpKeys()) {
+                if (tmpKey != null && !tmpKey.isBlank()) {
+                    try {
+                        FileCommitResponse commitRes = storageService.commitFile(
+                                FileCommitRequest.builder()
+                                        .tmpKey(tmpKey.trim())
+                                        .targetFolder(targetFolder)
+                                        .build()
+                        );
+                        pictureUrlsList.add(commitRes.getFileUrl());
+                    } catch (Exception e) {
+                        log.error("Failed to commit picture {} for complaint {}: {}", tmpKey, trackingNo, e.getMessage());
+                    }
+                }
+            }
+        }
+        String finalPictureUrls = String.join("\n", pictureUrlsList);
 
         CustomerComplaint complaint = CustomerComplaint.builder()
                 .trackingNo(trackingNo)
@@ -101,7 +135,7 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .defectName(request.getDefectName())
                 .quantity(request.getQuantity())
                 .serialNumbers(request.getSerialNumbers())
-                .pictureUrls(request.getPictureUrls())
+                .pictureUrls(finalPictureUrls)
                 // Phase 2: Assignment & Priority
                 .assignedTeam(request.getAssignedTeam())
                 .assignedPerson(request.getAssignedPerson())
@@ -312,7 +346,50 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getDefectName() != null) complaint.setDefectName(request.getDefectName());
         if (request.getQuantity() != null) complaint.setQuantity(request.getQuantity());
         if (request.getSerialNumbers() != null) complaint.setSerialNumbers(request.getSerialNumbers());
-        if (request.getPictureUrls() != null) complaint.setPictureUrls(request.getPictureUrls());
+        // Defect pictures update & auto-delete removed pictures from MinIO
+        if (request.getPictureUrls() != null || (request.getPictureTmpKeys() != null && !request.getPictureTmpKeys().isEmpty())) {
+            List<String> oldPictures = parsePictureUrlList(complaint.getPictureUrls());
+            List<String> keptPictures = new ArrayList<>();
+
+            if (request.getPictureUrls() != null) {
+                keptPictures.addAll(parsePictureUrlList(request.getPictureUrls()));
+            } else {
+                keptPictures.addAll(oldPictures);
+            }
+
+            // Detect and delete removed pictures from MinIO
+            for (String oldUrl : oldPictures) {
+                if (!keptPictures.contains(oldUrl)) {
+                    try {
+                        storageService.deleteFileByUrl(oldUrl);
+                        log.info("Deleted removed defect picture from MinIO: {}", oldUrl);
+                    } catch (Exception e) {
+                        log.warn("Failed to delete removed defect picture {} from MinIO: {}", oldUrl, e.getMessage());
+                    }
+                }
+            }
+
+            // Commit any new pictures from tmp/
+            if (request.getPictureTmpKeys() != null && !request.getPictureTmpKeys().isEmpty()) {
+                String targetFolder = "complaints/" + complaint.getYear() + "/" + complaint.getTrackingNo() + "/defects";
+                for (String tmpKey : request.getPictureTmpKeys()) {
+                    if (tmpKey != null && !tmpKey.isBlank()) {
+                        try {
+                            FileCommitResponse commitRes = storageService.commitFile(
+                                    FileCommitRequest.builder()
+                                            .tmpKey(tmpKey.trim())
+                                            .targetFolder(targetFolder)
+                                            .build()
+                            );
+                            keptPictures.add(commitRes.getFileUrl());
+                        } catch (Exception e) {
+                            log.error("Failed to commit picture {} for complaint {}: {}", tmpKey, complaint.getTrackingNo(), e.getMessage());
+                        }
+                    }
+                }
+            }
+            complaint.setPictureUrls(String.join("\n", keptPictures));
+        }
 
         // Phase 2: Assignment & Priority
         if (request.getAssignedTeam() != null) complaint.setAssignedTeam(request.getAssignedTeam());
@@ -411,12 +488,44 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getFinalStatus() != null) {
             complaint.setFinalStatus(request.getFinalStatus());
         }
-        if (request.getFinalEvidence() != null) {
-            complaint.setFinalEvidence(request.getFinalEvidence());
+        // Phase 8: Final Evidence (Closure) with MinIO cleanup
+        if (request.getFinalEvidence() != null || (request.getFinalEvidenceTmpKey() != null && !request.getFinalEvidenceTmpKey().isBlank())) {
+            String oldEvidence = complaint.getFinalEvidence();
+            String newEvidence = request.getFinalEvidence();
+
+            if (request.getFinalEvidenceTmpKey() != null && !request.getFinalEvidenceTmpKey().isBlank()) {
+                String closureFolder = "complaints/" + complaint.getYear() + "/" + complaint.getTrackingNo() + "/closure";
+                try {
+                    FileCommitResponse commitRes = storageService.commitFile(
+                            FileCommitRequest.builder()
+                                    .tmpKey(request.getFinalEvidenceTmpKey().trim())
+                                    .targetFolder(closureFolder)
+                                    .build()
+                    );
+                    newEvidence = commitRes.getFileUrl();
+                } catch (Exception e) {
+                    log.error("Failed to commit final evidence {} for complaint {}: {}", request.getFinalEvidenceTmpKey(), complaint.getTrackingNo(), e.getMessage());
+                }
+            }
+
+            // If oldEvidence was replaced or cleared, delete the old file from MinIO
+            if (oldEvidence != null && !oldEvidence.isBlank() && !oldEvidence.equals(newEvidence)) {
+                try {
+                    storageService.deleteFileByUrl(oldEvidence);
+                    log.info("Deleted previous final evidence from MinIO: {}", oldEvidence);
+                } catch (Exception e) {
+                    log.warn("Failed to delete previous final evidence {} from MinIO: {}", oldEvidence, e.getMessage());
+                }
+            }
+
+            if (newEvidence != null) {
+                complaint.setFinalEvidence(newEvidence);
+            }
         }
         if (request.getRemarks() != null) {
             complaint.setRemarks(request.getRemarks());
         }
+
 
         // Status transition: explicit override or smart progression
         if (request.getStatus() != null) {
@@ -667,6 +776,13 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
 
             LocalDate today = LocalDate.now();
 
+            Drawing<?> drawing = sheet.getDrawingPatriarch();
+            if (drawing == null) {
+                drawing = sheet.createDrawingPatriarch();
+            }
+            CreationHelper creationHelper = workbook.getCreationHelper();
+            sheet.setColumnWidth(19, 28 * 256);
+
             for (int i = 0; i < complaints.size(); i++) {
                 CustomerComplaint c = complaints.get(i);
                 Row row = sheet.createRow(startRow + i);
@@ -745,8 +861,59 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 // Col 18: SN
                 createStringCell(row, 18, c.getSerialNumbers(), defaultDataStyle);
 
-                // Col 19: Picture
-                createStringCell(row, 19, c.getPictureUrls(), defaultDataStyle);
+                // Col 19: Picture (embed image if available)
+                Cell picCell = row.createCell(19);
+                picCell.setCellStyle(defaultDataStyle);
+                String rawPicUrls = c.getPictureUrls();
+                boolean imageEmbedded = false;
+
+                if (rawPicUrls != null && !rawPicUrls.isBlank()) {
+                    String[] urls = rawPicUrls.split("[\\r\\n,;]+");
+                    String firstPicUrl = null;
+                    for (String u : urls) {
+                        if (u != null && !u.trim().isBlank()) {
+                            firstPicUrl = u.trim();
+                            break;
+                        }
+                    }
+
+                    if (firstPicUrl != null) {
+                        try {
+                            byte[] imgBytes = storageService.getFileBytesFromUrl(firstPicUrl);
+                            if (imgBytes != null && imgBytes.length > 0) {
+                                // 1. Set row height BEFORE creating picture so POI calculates extents accurately
+                                row.setHeightInPoints(75);
+
+                                int picType = detectPictureType(imgBytes, firstPicUrl);
+                                int picIdx = workbook.addPicture(imgBytes, picType);
+
+                                ClientAnchor anchor = creationHelper.createClientAnchor();
+                                anchor.setCol1(19);
+                                anchor.setRow1(row.getRowNum());
+                                anchor.setCol2(20);
+                                anchor.setRow2(row.getRowNum() + 1);
+
+                                // Padding of ~4 pixels (38,100 EMU) so image is inset neatly inside cell borders
+                                int paddingEmu = 4 * 9525;
+                                anchor.setDx1(paddingEmu);
+                                anchor.setDy1(paddingEmu);
+                                anchor.setDx2(-paddingEmu);
+                                anchor.setDy2(-paddingEmu);
+
+                                anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+
+                                drawing.createPicture(anchor, picIdx);
+                                imageEmbedded = true;
+                            }
+                        } catch (Exception ex) {
+                            log.warn("Không thể chèn ảnh vào Excel cho complaint {}: {}", c.getTrackingNo(), ex.getMessage());
+                        }
+                    }
+                }
+
+                if (!imageEmbedded) {
+                    picCell.setCellValue(rawPicUrls != null ? rawPicUrls : "");
+                }
 
                 // Col 20: Root Cause
                 createStringCell(row, 20, c.getRootCause(), defaultDataStyle);
@@ -826,5 +993,39 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         Cell cell = row.createCell(colIndex);
         cell.setCellValue(value);
         cell.setCellStyle(style);
+    }
+
+    private int detectPictureType(byte[] data, String url) {
+        if (data != null && data.length > 8) {
+            // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
+            if ((data[0] & 0xFF) == 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G') {
+                return Workbook.PICTURE_TYPE_PNG;
+            }
+            // JPEG magic bytes: FF D8 FF
+            if ((data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8) {
+                return Workbook.PICTURE_TYPE_JPEG;
+            }
+        }
+        if (url != null) {
+            String lower = url.toLowerCase();
+            if (lower.endsWith(".png")) {
+                return Workbook.PICTURE_TYPE_PNG;
+            }
+        }
+        return Workbook.PICTURE_TYPE_JPEG;
+    }
+
+    private List<String> parsePictureUrlList(String rawUrls) {
+        List<String> list = new ArrayList<>();
+        if (rawUrls != null && !rawUrls.isBlank()) {
+            String[] parts = rawUrls.split("[\\r\\n,;]+");
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (!trimmed.isBlank()) {
+                    list.add(trimmed);
+                }
+            }
+        }
+        return list;
     }
 }

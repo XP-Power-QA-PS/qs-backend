@@ -11,6 +11,7 @@ import lombok.Setter;
 import pnh.dev.qs.complaint.enums.InternalExternal;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -60,6 +61,7 @@ public class ComplaintCreateRequest {
     private String serialNumbers;
 
     private String pictureUrls;
+    private List<String> pictureTmpKeys;
 
     private String assignedTeam;
 

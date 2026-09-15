@@ -10,6 +10,7 @@ import pnh.dev.qs.complaint.enums.ComplaintStatus;
 import pnh.dev.qs.complaint.enums.InternalExternal;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -34,6 +35,7 @@ public class ComplaintUpdateRequest {
     private Integer quantity;
     private String serialNumbers;
     private String pictureUrls;
+    private List<String> pictureTmpKeys;
 
     // Phase 2: Assignment & Priority
     private String assignedTeam;
@@ -81,6 +83,7 @@ public class ComplaintUpdateRequest {
     private LocalDate closureDate;
     private String finalStatus;
     private String finalEvidence;
+    private String finalEvidenceTmpKey;
     private String remarks;
 
     // Lifecycle Status override / transition

@@ -15,6 +15,7 @@ import pnh.dev.qs.complaint.dto.ComplaintCreateRequest;
 import pnh.dev.qs.complaint.dto.ComplaintMeetingResponse;
 import pnh.dev.qs.complaint.dto.ComplaintResponse;
 import pnh.dev.qs.complaint.dto.ComplaintScheduleMeetingRequest;
+import pnh.dev.qs.complaint.dto.ComplaintUpdateRequest;
 import pnh.dev.qs.complaint.dto.MeetingConcludeRequest;
 import pnh.dev.qs.complaint.entity.ComplaintMeeting;
 import pnh.dev.qs.complaint.entity.CustomerComplaint;
@@ -58,6 +59,9 @@ class CustomerComplaintServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private pnh.dev.qs.storage.service.StorageService storageService;
+
     @InjectMocks
     private CustomerComplaintServiceImpl complaintService;
 
@@ -100,6 +104,33 @@ class CustomerComplaintServiceTest {
         assertThat(response.getYear()).isEqualTo(2026);
         assertThat(response.getMonth()).isEqualTo("09");
         assertThat(response.getModel()).isEqualTo("MDL-9000");
+    }
+
+    @Test
+    @DisplayName("Should commit pictureTmpKeys to complaints/year/trackingNo/defects when creating complaint")
+    void testCreateComplaint_WithPictureTmpKeys_CommitsToDefectsFolder() {
+        LocalDate date = LocalDate.of(2026, 9, 12);
+        ComplaintCreateRequest request = ComplaintCreateRequest.builder()
+                .receivedDate(date)
+                .customerName("Foxconn Technology")
+                .model("MDL-9000")
+                .issueDescription("Surface crack defect")
+                .pictureTmpKeys(List.of("tmp/1/photo1.jpg", "tmp/1/photo2.png"))
+                .build();
+
+        when(trackingNoGenerator.generateNextTrackingNo(date)).thenReturn("CMP-2026-0001");
+        when(storageService.commitFile(any(pnh.dev.qs.storage.dto.FileCommitRequest.class)))
+                .thenReturn(pnh.dev.qs.storage.dto.FileCommitResponse.builder()
+                        .fileUrl("http://localhost:9000/qs-bucket/complaints/2026/CMP-2026-0001/defects/photo.jpg")
+                        .build());
+
+        when(complaintRepository.save(any(CustomerComplaint.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ComplaintResponse response = complaintService.createComplaint(request, mockUser);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPictureUrls()).contains("complaints/2026/CMP-2026-0001/defects");
+        verify(storageService, org.mockito.Mockito.times(2)).commitFile(any(pnh.dev.qs.storage.dto.FileCommitRequest.class));
     }
 
     @Test
@@ -197,6 +228,61 @@ class CustomerComplaintServiceTest {
     }
 
     @Test
+    @DisplayName("updateComplaint: Should auto-delete removed picture from MinIO when pictureUrls is updated")
+    void testUpdateComplaint_WhenPictureRemoved_DeletesFromMinio() {
+        String pic1 = "http://localhost:9000/qs-bucket/complaints/2026/CMP-2026-001/defects/defect_1.png";
+        String pic2 = "http://localhost:9000/qs-bucket/complaints/2026/CMP-2026-001/defects/defect_2.png";
+
+        CustomerComplaint complaint = CustomerComplaint.builder()
+                .trackingNo("CMP-2026-001")
+                .year(2026)
+                .receivedDate(LocalDate.of(2026, 9, 1))
+                .pictureUrls(pic1 + "\n" + pic2)
+                .build();
+
+        when(complaintRepository.findByTrackingNo("CMP-2026-001")).thenReturn(Optional.of(complaint));
+        when(complaintRepository.save(any(CustomerComplaint.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // User removes pic2 and saves with only pic1
+        ComplaintUpdateRequest updateReq = ComplaintUpdateRequest.builder()
+                .pictureUrls(pic1)
+                .build();
+
+        complaintService.updateComplaint("CMP-2026-001", updateReq, mockUser);
+
+        // Verify pic2 was deleted from MinIO
+        verify(storageService).deleteFileByUrl(pic2);
+        assertThat(complaint.getPictureUrls()).isEqualTo(pic1);
+    }
+
+    @Test
+    @DisplayName("updateComplaint: Should auto-delete old finalEvidence from MinIO when replaced")
+    void testUpdateComplaint_WhenFinalEvidenceReplaced_DeletesOldFromMinio() {
+        String oldEvidence = "http://localhost:9000/qs-bucket/complaints/2026/CMP-2026-001/closure/old_evidence.png";
+        String newEvidence = "http://localhost:9000/qs-bucket/complaints/2026/CMP-2026-001/closure/new_evidence.png";
+
+        CustomerComplaint complaint = CustomerComplaint.builder()
+                .trackingNo("CMP-2026-001")
+                .year(2026)
+                .receivedDate(LocalDate.of(2026, 9, 1))
+                .finalEvidence(oldEvidence)
+                .build();
+
+        when(complaintRepository.findByTrackingNo("CMP-2026-001")).thenReturn(Optional.of(complaint));
+        when(complaintRepository.save(any(CustomerComplaint.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ComplaintUpdateRequest updateReq = ComplaintUpdateRequest.builder()
+                .finalEvidence(newEvidence)
+                .build();
+
+        complaintService.updateComplaint("CMP-2026-001", updateReq, mockUser);
+
+        // Verify old evidence was deleted from MinIO
+        verify(storageService).deleteFileByUrl(oldEvidence);
+        assertThat(complaint.getFinalEvidence()).isEqualTo(newEvidence);
+    }
+
+    @Test
     @DisplayName("exportComplaintsToExcel: Should export xlsx matching Customer complaint template sorted by trackingNo ASC")
     void testExportComplaintsToExcel() throws Exception {
         CustomerComplaint c1 = CustomerComplaint.builder()
@@ -238,7 +324,6 @@ class CustomerComplaintServiceTest {
         try (org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(bytes))) {
             org.apache.poi.ss.usermodel.Sheet sheet = wb.getSheetAt(0);
             assertThat(sheet).isNotNull();
-            // Header at row 3 (0-indexed 2)
             assertThat(sheet.getRow(2).getCell(1).getStringCellValue()).isEqualTo("Control No");
             // Row 4 (index 3): COMP-2026-001
             assertThat(sheet.getRow(3).getCell(1).getStringCellValue()).isEqualTo("COMP-2026-001");
@@ -246,6 +331,57 @@ class CustomerComplaintServiceTest {
             // Row 5 (index 4): COMP-2026-002
             assertThat(sheet.getRow(4).getCell(1).getStringCellValue()).isEqualTo("COMP-2026-002");
             assertThat(sheet.getRow(4).getCell(13).getStringCellValue()).isEqualTo("MD-02");
+        }
+    }
+
+    @Test
+    @DisplayName("exportComplaintsToExcel: Should embed actual picture and set row height when pictureUrls exist")
+    void testExportComplaintsToExcel_WithEmbeddedPicture() throws Exception {
+        String testPicUrl = "http://localhost:9000/qs-bucket/complaints/2026/COMP-2026-001/defects/defect_1.png";
+        CustomerComplaint c1 = CustomerComplaint.builder()
+                .trackingNo("COMP-2026-001")
+                .year(2026)
+                .month("Sept")
+                .week(37)
+                .receivedDate(LocalDate.of(2026, 9, 1))
+                .customerName("Honda")
+                .model("MD-01")
+                .defectName("Scratch")
+                .issueDescription("Surface scratch detected")
+                .quantity(5)
+                .pictureUrls(testPicUrl)
+                .status(ComplaintStatus.RECEIVED)
+                .build();
+
+        when(complaintRepository.findByYearOrderByTrackingNoAsc(2026)).thenReturn(List.of(c1));
+        // Valid 1x1 transparent PNG bytes
+        byte[] pngBytes = new byte[]{
+                (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, (byte) 0xC4,
+                (byte) 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+                0x54, 0x78, (byte) 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+                0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, (byte) 0xB4, 0x00,
+                0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, (byte) 0xAE,
+                0x42, 0x60, (byte) 0x82
+        };
+        when(storageService.getFileBytesFromUrl(testPicUrl)).thenReturn(pngBytes);
+
+        byte[] bytes = complaintService.exportComplaintsToExcel(2026);
+
+        assertThat(bytes).isNotNull();
+        try (org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(bytes))) {
+            org.apache.poi.ss.usermodel.Sheet sheet = wb.getSheetAt(0);
+            assertThat(sheet).isNotNull();
+            // Verify picture was added to workbook
+            assertThat(wb.getAllPictures()).isNotEmpty();
+            // Verify row height expanded to 70pt for picture display
+            org.apache.poi.ss.usermodel.Row row = sheet.getRow(3);
+            assertThat(row.getHeightInPoints()).isEqualTo(75.0f);
+            // Verify cell 19 does not have hyperlink (pure embedded image)
+            org.apache.poi.ss.usermodel.Cell picCell = row.getCell(19);
+            assertThat(picCell.getHyperlink()).isNull();
         }
     }
 }
