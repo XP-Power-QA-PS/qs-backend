@@ -76,4 +76,35 @@ class UserEmailServiceTest {
         assertEquals(1, result.getCcCount());
         assertTrue(result.isAsync());
     }
+
+    @Test
+    void testSendMeetingInvitation_DelegatesToSelfProxyWhenInjected() {
+        MeetingEmailRequest request = MeetingEmailRequest.builder()
+                .trackingNo("2026-09-0003")
+                .meetingDate(LocalDate.of(2026, 9, 16))
+                .startTime(LocalTime.of(14, 0))
+                .roomLocation("Room 202")
+                .agenda("Preliminary discussion")
+                .recipients(List.of(
+                        EmailRecipientDTO.builder().email("eng@example.com").recipientType("TO").build()
+                ))
+                .build();
+
+        UserEmailService mockProxy = mock(UserEmailService.class);
+        userEmailService.setSelf(mockProxy);
+
+        EmailSendResultDTO result = userEmailService.sendMeetingInvitation(request);
+
+        assertNotNull(result);
+        assertEquals("2026-09-0003", result.getTrackingNo());
+        assertEquals(1, result.getTotalRecipients());
+        assertEquals(1, result.getToCount());
+        assertEquals(0, result.getCcCount());
+        assertTrue(result.isAsync());
+
+        // Verify async delegation through Spring proxy was triggered
+        verify(mockProxy, times(1)).sendMeetingInvitationAsync(request);
+        // Verify mailSender is NOT called directly on the main thread
+        verify(mailSender, never()).createMimeMessage();
+    }
 }
