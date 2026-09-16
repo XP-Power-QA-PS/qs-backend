@@ -66,10 +66,6 @@ public class ComplaintCreateRequest {
     private String assignedTeam;
 
     private String assignedPerson;
-
-    @Builder.Default
-    private String priority = "MEDIUM";
-
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate assignmentDeadline;
 }

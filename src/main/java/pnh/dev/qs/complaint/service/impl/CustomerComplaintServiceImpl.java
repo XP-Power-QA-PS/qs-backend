@@ -136,10 +136,9 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .quantity(request.getQuantity())
                 .serialNumbers(request.getSerialNumbers())
                 .pictureUrls(finalPictureUrls)
-                // Phase 2: Assignment & Priority
+                // Phase 2: Assignment
                 .assignedTeam(request.getAssignedTeam())
                 .assignedPerson(request.getAssignedPerson())
-                .priority(request.getPriority() != null ? request.getPriority() : "MEDIUM")
                 .assignmentDeadline(request.getAssignmentDeadline() != null ? request.getAssignmentDeadline() : receivedDate.plusDays(1))
                 .containmentStatus("IN_PROGRESS")
                 .status(ComplaintStatus.RECEIVED)
@@ -339,6 +338,7 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
         if (request.getSalesforceCapa() != null) complaint.setSalesforceCapa(request.getSalesforceCapa());
         if (request.getArea() != null) complaint.setArea(request.getArea());
         if (request.getCustomerName() != null && !request.getCustomerName().isBlank()) complaint.setCustomerName(request.getCustomerName());
+        if (request.getReceivedDate() != null) complaint.setReceivedDate(request.getReceivedDate());
         if (request.getCustomerFinding() != null) complaint.setCustomerFinding(request.getCustomerFinding());
         if (request.getModel() != null && !request.getModel().isBlank()) complaint.setModel(request.getModel());
         if (request.getIssueDescription() != null && !request.getIssueDescription().isBlank()) complaint.setIssueDescription(request.getIssueDescription());
@@ -391,10 +391,9 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
             complaint.setPictureUrls(String.join("\n", keptPictures));
         }
 
-        // Phase 2: Assignment & Priority
+        // Phase 2: Assignment
         if (request.getAssignedTeam() != null) complaint.setAssignedTeam(request.getAssignedTeam());
         if (request.getAssignedPerson() != null) complaint.setAssignedPerson(request.getAssignedPerson());
-        if (request.getPriority() != null) complaint.setPriority(request.getPriority());
         if (request.getAssignmentDeadline() != null) complaint.setAssignmentDeadline(request.getAssignmentDeadline());
 
         // Phase 3: Containment
@@ -594,7 +593,6 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .internalExternal(c.getInternalExternal())
                 .assignedTeam(c.getAssignedTeam())
                 .assignedPerson(c.getAssignedPerson())
-                .priority(c.getPriority())
                 .status(c.getStatus())
                 .actionStatus(c.getActionStatus())
                 .effectivenessStatus(c.getEffectivenessStatus())
@@ -647,10 +645,9 @@ public class CustomerComplaintServiceImpl implements CustomerComplaintService {
                 .quantity(c.getQuantity())
                 .serialNumbers(c.getSerialNumbers())
                 .pictureUrls(c.getPictureUrls())
-                // Phase 2: Assignment & Priority
+                // Phase 2: Assignment
                 .assignedTeam(c.getAssignedTeam())
                 .assignedPerson(c.getAssignedPerson())
-                .priority(c.getPriority())
                 .assignmentDeadline(c.getAssignmentDeadline())
                 // Phase 3: Containment
                 .containmentAction(c.getContainmentAction())

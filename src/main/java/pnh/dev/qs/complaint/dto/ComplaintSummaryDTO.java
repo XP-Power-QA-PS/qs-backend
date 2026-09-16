@@ -42,7 +42,6 @@ public class ComplaintSummaryDTO {
     private String capaNo;
     private String assignedTeam;
     private String assignedPerson;
-    private String priority;
     private ComplaintStatus status;
     private String actionStatus;
     private String effectivenessStatus;
