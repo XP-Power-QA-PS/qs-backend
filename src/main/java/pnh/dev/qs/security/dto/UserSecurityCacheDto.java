@@ -20,6 +20,5 @@ public class UserSecurityCacheDto {
     private String passwordHash;
     private boolean isEnabled;
     private Set<String> roles;
-    private String firstName;
-    private String lastName;
+    private String fullName;
 }

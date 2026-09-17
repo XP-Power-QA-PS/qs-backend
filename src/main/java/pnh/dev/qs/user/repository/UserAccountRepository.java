@@ -22,8 +22,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long>,
            "WHERE u.isEnabled = true AND u.email IS NOT NULL AND u.email <> '' AND (:keyword IS NULL OR :keyword = '' OR " +
            "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<UserAccount> searchActiveRecipients(@Param("keyword") String keyword);
 
     @Query("SELECT u FROM UserAccount u WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR (u.email IS NOT NULL AND LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")

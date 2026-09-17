@@ -8,11 +8,8 @@ import java.time.LocalDate;
 
 @Data
 public class UserProfileUpdateRequest {
-    @Size(max = 100, message = "First name must not exceed 100 characters")
-    private String firstName;
-
-    @Size(max = 100, message = "Last name must not exceed 100 characters")
-    private String lastName;
+    @Size(max = 150, message = "Full name must not exceed 150 characters")
+    private String fullName;
 
     @Size(max = 20, message = "Phone number must not exceed 20 characters")
     private String phoneNumber;
