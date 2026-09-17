@@ -53,10 +53,9 @@ public class ComplaintResponse {
     private String serialNumbers;
     private String pictureUrls;
 
-    // Phase 2: Assignment & Priority
+    // Phase 2: Assignment
     private String assignedTeam;
     private String assignedPerson;
-    private String priority;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate assignmentDeadline;
 

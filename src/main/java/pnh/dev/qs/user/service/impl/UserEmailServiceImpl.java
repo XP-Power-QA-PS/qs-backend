@@ -4,6 +4,8 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -30,6 +32,14 @@ public class UserEmailServiceImpl implements UserEmailService {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
     private final IcsCalendarService icsCalendarService;
+
+    @Lazy
+    @Autowired
+    private UserEmailService self;
+
+    public void setSelf(UserEmailService self) {
+        this.self = self;
+    }
 
     @Value("${app.mail.from-email:noreply.qs.system@gmail.com}")
     private String fromEmail;
@@ -67,8 +77,12 @@ public class UserEmailServiceImpl implements UserEmailService {
 
         int total = toCount + ccCount;
 
-        // Trigger asynchronous email dispatch
-        sendMeetingInvitationAsync(request);
+        // Trigger asynchronous email dispatch via Spring proxy to ensure execution in mailTaskExecutor
+        if (self != null) {
+            self.sendMeetingInvitationAsync(request);
+        } else {
+            sendMeetingInvitationAsync(request);
+        }
 
         return EmailSendResultDTO.builder()
                 .trackingNo(request.getTrackingNo())

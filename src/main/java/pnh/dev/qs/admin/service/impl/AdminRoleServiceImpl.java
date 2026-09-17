@@ -49,14 +49,19 @@ public class AdminRoleServiceImpl implements AdminRoleService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
         
-        // Disallow editing standard roles just in case
-        if (role.getName().equals("ROLE_ADMIN") || role.getName().equals("ROLE_USER")) {
-            throw new BadRequestException("Cannot modify system roles");
-        }
-
         String newRoleName = request.getName().toUpperCase();
         if (!newRoleName.startsWith("ROLE_")) {
             newRoleName = "ROLE_" + newRoleName;
+        }
+
+        // Disallow renaming standard system roles, but allow updating their description
+        if (role.getName().equals("ROLE_ADMIN") || role.getName().equals("ROLE_USER")) {
+            if (!role.getName().equals(newRoleName)) {
+                throw new BadRequestException("Cannot rename system roles");
+            }
+            role.setDescription(request.getDescription());
+            Role updatedRole = roleRepository.save(role);
+            return mapToResponse(updatedRole);
         }
 
         if (!role.getName().equals(newRoleName) && roleRepository.findByName(newRoleName).isPresent()) {

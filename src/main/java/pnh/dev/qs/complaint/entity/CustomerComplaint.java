@@ -103,16 +103,12 @@ public class CustomerComplaint extends AuditableEntity {
     @Column(name = "picture_urls", columnDefinition = "TEXT")
     private String pictureUrls;
 
-    // Phase 2: Assignment & Priority
+    // Phase 2: Assignment
     @Column(name = "assigned_team", length = 100)
     private String assignedTeam;
 
     @Column(name = "assigned_person", length = 100)
     private String assignedPerson;
-
-    @Column(name = "priority", length = 20)
-    @Builder.Default
-    private String priority = "MEDIUM";
 
     @Column(name = "assignment_deadline")
     private LocalDate assignmentDeadline;
