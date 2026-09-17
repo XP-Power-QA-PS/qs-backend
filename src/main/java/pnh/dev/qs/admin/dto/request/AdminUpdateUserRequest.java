@@ -9,7 +9,6 @@ import java.util.Set;
 @Data
 public class AdminUpdateUserRequest {
 
-    @NotBlank(message = "Email is required")
     @Email(message = "Email format is not valid")
     private String email;
 

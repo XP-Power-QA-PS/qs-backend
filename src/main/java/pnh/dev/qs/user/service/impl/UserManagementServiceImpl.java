@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pnh.dev.qs.exception.custom.BadRequestException;
 import pnh.dev.qs.exception.custom.DuplicateResourceException;
 import pnh.dev.qs.exception.custom.ResourceNotFoundException;
 import pnh.dev.qs.exception.custom.UnauthorizedException;
@@ -23,6 +24,7 @@ import pnh.dev.qs.user.service.UserManagementService;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,19 +36,33 @@ public class UserManagementServiceImpl implements UserManagementService {
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
 
+    private void validateEmailPolicy(String email, Set<String> roleNames) {
+        boolean isOnlyOperator = roleNames != null && !roleNames.isEmpty() 
+                && roleNames.stream().allMatch("ROLE_OPERATOR"::equalsIgnoreCase);
+        if (!isOnlyOperator) {
+            if (email == null || email.isBlank()) {
+                throw new BadRequestException("Email is required for the selected role(s)");
+            }
+        }
+    }
+
     @Override
     @Transactional
     public UserAccount provisionUser(String username, String email, String rawPassword, Set<String> roleNames) {
         if (userAccountRepository.existsByUsername(username)) {
             throw new DuplicateResourceException("Username already exists");
         }
-        if (userAccountRepository.existsByEmail(email)) {
+
+        String sanitizedEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : null;
+        validateEmailPolicy(sanitizedEmail, roleNames);
+
+        if (sanitizedEmail != null && userAccountRepository.existsByEmail(sanitizedEmail)) {
             throw new DuplicateResourceException("Email already exists");
         }
 
         UserAccount user = new UserAccount();
         user.setUsername(username);
-        user.setEmail(email);
+        user.setEmail(sanitizedEmail);
 
         String password = (rawPassword != null && !rawPassword.isBlank()) ? rawPassword : "123456";
         user.setPasswordHash(passwordEncoder.encode(password));
@@ -78,10 +94,17 @@ public class UserManagementServiceImpl implements UserManagementService {
     public UserAccount updateUser(Long userId, String email, String rawPassword, Boolean isEnabled, Set<String> roleNames) {
         UserAccount user = getUserById(userId);
 
-        if (!user.getEmail().equals(email) && userAccountRepository.existsByEmail(email)) {
-            throw new DuplicateResourceException("Email already exists");
+        String sanitizedEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : null;
+        Set<String> effectiveRoles = roleNames != null ? roleNames : user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
+        validateEmailPolicy(sanitizedEmail, effectiveRoles);
+
+        if (sanitizedEmail != null) {
+            if ((user.getEmail() == null || !sanitizedEmail.equalsIgnoreCase(user.getEmail())) 
+                    && userAccountRepository.existsByEmail(sanitizedEmail)) {
+                throw new DuplicateResourceException("Email already exists");
+            }
         }
-        user.setEmail(email);
+        user.setEmail(sanitizedEmail);
 
         if (rawPassword != null && !rawPassword.isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(rawPassword));

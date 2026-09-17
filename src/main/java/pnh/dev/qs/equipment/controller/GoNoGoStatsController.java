@@ -46,7 +46,7 @@ public class GoNoGoStatsController {
      * @param floorId   Lọc theo Floor (null = tất cả)
      */
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<GoNoGoSummaryDTO> getSummary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -61,7 +61,7 @@ public class GoNoGoStatsController {
      * Xu hướng từng ngày (Line Chart + Stacked Bar Chart).
      */
     @GetMapping("/trend")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<List<DailyTrendDTO>> getDailyTrend(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -76,7 +76,7 @@ public class GoNoGoStatsController {
      * Phân rã nguyên nhân lỗi Go / No-Go / Program (Donut Chart).
      */
     @GetMapping("/defect-breakdown")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<DefectBreakdownDTO> getDefectBreakdown(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -91,7 +91,7 @@ public class GoNoGoStatsController {
      * So sánh pass rate giữa các Floor (Horizontal Bar Chart).
      */
     @GetMapping("/by-floor")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<List<FloorStatsDTO>> getStatsByFloor(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -107,7 +107,7 @@ public class GoNoGoStatsController {
      * @param limit Số kết quả tối đa, mặc định 10
      */
     @GetMapping("/worst-equipments")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<List<EquipmentRankDTO>> getWorstEquipments(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -126,7 +126,7 @@ public class GoNoGoStatsController {
      * @param year        Năm cần xem chi tiết, mặc định năm hiện tại
      */
     @GetMapping("/equipment/{equipmentId}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN', 'ROLE_OPERATOR', 'ROLE_INSPECTOR', 'ROLE_QC_ENGINEER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<EquipmentStatsDTO> getEquipmentStats(
             @PathVariable Long equipmentId,
             @RequestParam(required = false) Integer month,
