@@ -12,7 +12,9 @@ public interface UserManagementService {
 
     // Identity and Provisioning
     UserAccount provisionUser(String username, String email, String rawPassword, Set<String> roleNames);
+    UserAccount provisionUser(String username, String email, String rawPassword, Set<String> roleNames, String fullName);
     UserAccount updateUser(Long userId, String email, String rawPassword, Boolean isEnabled, Set<String> roleNames);
+    UserAccount updateUser(Long userId, String email, String rawPassword, Boolean isEnabled, Set<String> roleNames, String fullName);
     
     // Lifecycle Management
     void softDeleteUser(Long userId);

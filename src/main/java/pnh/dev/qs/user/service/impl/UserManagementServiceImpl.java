@@ -49,6 +49,12 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     @Transactional
     public UserAccount provisionUser(String username, String email, String rawPassword, Set<String> roleNames) {
+        return provisionUser(username, email, rawPassword, roleNames, null);
+    }
+
+    @Override
+    @Transactional
+    public UserAccount provisionUser(String username, String email, String rawPassword, Set<String> roleNames, String fullName) {
         if (userAccountRepository.existsByUsername(username)) {
             throw new DuplicateResourceException("Username already exists");
         }
@@ -84,6 +90,9 @@ public class UserManagementServiceImpl implements UserManagementService {
 
         UserProfile profile = new UserProfile();
         profile.setUserAccount(user);
+        if (fullName != null && !fullName.isBlank()) {
+            profile.setFullName(fullName.trim());
+        }
         user.setProfile(profile);
 
         return userAccountRepository.save(user);
@@ -92,6 +101,12 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     @Transactional
     public UserAccount updateUser(Long userId, String email, String rawPassword, Boolean isEnabled, Set<String> roleNames) {
+        return updateUser(userId, email, rawPassword, isEnabled, roleNames, null);
+    }
+
+    @Override
+    @Transactional
+    public UserAccount updateUser(Long userId, String email, String rawPassword, Boolean isEnabled, Set<String> roleNames, String fullName) {
         UserAccount user = getUserById(userId);
 
         String sanitizedEmail = (email != null && !email.trim().isEmpty()) ? email.trim() : null;
@@ -122,6 +137,16 @@ public class UserManagementServiceImpl implements UserManagementService {
                 roles.add(role);
             }
             user.setRoles(roles);
+        }
+
+        if (fullName != null) {
+            UserProfile profile = user.getProfile();
+            if (profile == null) {
+                profile = new UserProfile();
+                profile.setUserAccount(user);
+                user.setProfile(profile);
+            }
+            profile.setFullName(fullName.trim().isEmpty() ? null : fullName.trim());
         }
 
         UserAccount updated = userAccountRepository.save(user);
@@ -226,8 +251,7 @@ public class UserManagementServiceImpl implements UserManagementService {
             user.setProfile(profile);
         }
 
-        if (request.getFirstName() != null) profile.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) profile.setLastName(request.getLastName());
+        if (request.getFullName() != null) profile.setFullName(request.getFullName());
         if (request.getPhoneNumber() != null) profile.setPhoneNumber(request.getPhoneNumber());
         if (request.getAvatarUrl() != null) profile.setAvatarUrl(request.getAvatarUrl());
         if (request.getDateOfBirth() != null) profile.setDateOfBirth(request.getDateOfBirth());
@@ -245,8 +269,7 @@ public class UserManagementServiceImpl implements UserManagementService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .firstName(profile != null ? profile.getFirstName() : null)
-                .lastName(profile != null ? profile.getLastName() : null)
+                .fullName(profile != null ? profile.getFullName() : null)
                 .phoneNumber(profile != null ? profile.getPhoneNumber() : null)
                 .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
                 .dateOfBirth(profile != null ? profile.getDateOfBirth() : null)

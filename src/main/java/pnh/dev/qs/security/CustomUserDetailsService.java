@@ -99,10 +99,9 @@ public class CustomUserDetailsService implements UserDetailsService {
             user.setRoles(roles);
         }
 
-        if (dto.getFirstName() != null || dto.getLastName() != null) {
+        if (dto.getFullName() != null) {
             UserProfile profile = new UserProfile();
-            profile.setFirstName(dto.getFirstName());
-            profile.setLastName(dto.getLastName());
+            profile.setFullName(dto.getFullName());
             user.setProfile(profile);
         }
 
@@ -114,8 +113,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 ? user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
                 : Collections.emptySet();
 
-        String firstName = user.getProfile() != null ? user.getProfile().getFirstName() : null;
-        String lastName = user.getProfile() != null ? user.getProfile().getLastName() : null;
+        String fullName = user.getProfile() != null ? user.getProfile().getFullName() : null;
 
         return UserSecurityCacheDto.builder()
                 .id(user.getId())
@@ -124,8 +122,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .passwordHash(user.getPasswordHash())
                 .isEnabled(user.isEnabled())
                 .roles(roles)
-                .firstName(firstName)
-                .lastName(lastName)
+                .fullName(fullName)
                 .build();
     }
 }

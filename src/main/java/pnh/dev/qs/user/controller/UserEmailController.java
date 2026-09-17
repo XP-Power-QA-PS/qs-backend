@@ -43,15 +43,9 @@ public class UserEmailController {
         List<UserAccount> users = userAccountRepository.searchActiveRecipients(keyword.trim());
 
         List<RecipientUserDTO> dtoList = users.stream().map(u -> {
-            String fullName = "";
-            if (u.getProfile() != null) {
-                String first = u.getProfile().getFirstName() != null ? u.getProfile().getFirstName() : "";
-                String last = u.getProfile().getLastName() != null ? u.getProfile().getLastName() : "";
-                fullName = (first + " " + last).trim();
-            }
-            if (fullName.isBlank()) {
-                fullName = u.getUsername();
-            }
+            String fullName = (u.getProfile() != null && u.getProfile().getFullName() != null && !u.getProfile().getFullName().isBlank())
+                    ? u.getProfile().getFullName().trim()
+                    : u.getUsername();
 
             List<String> roleNames = u.getRoles().stream()
                     .map(Role::getName)
@@ -87,13 +81,10 @@ public class UserEmailController {
                 request.setOrganizerEmail(user.getEmail());
             }
             if (request.getOrganizerName() == null || request.getOrganizerName().isBlank()) {
-                String name = "";
-                if (user.getProfile() != null) {
-                    String first = user.getProfile().getFirstName() != null ? user.getProfile().getFirstName() : "";
-                    String last = user.getProfile().getLastName() != null ? user.getProfile().getLastName() : "";
-                    name = (first + " " + last).trim();
-                }
-                request.setOrganizerName(!name.isBlank() ? name : user.getUsername());
+                String name = (user.getProfile() != null && user.getProfile().getFullName() != null && !user.getProfile().getFullName().isBlank())
+                        ? user.getProfile().getFullName().trim()
+                        : user.getUsername();
+                request.setOrganizerName(name);
             }
         }
 

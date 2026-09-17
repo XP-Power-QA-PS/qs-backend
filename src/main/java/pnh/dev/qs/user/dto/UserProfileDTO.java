@@ -1,9 +1,6 @@
 package pnh.dev.qs.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import lombok.Builder;
 import lombok.Data;
 import pnh.dev.qs.user.entity.Gender;
@@ -18,8 +15,7 @@ public class UserProfileDTO {
     private Long id;
     private String username;
     private String email;
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String phoneNumber;
     private String avatarUrl;
     private LocalDate dateOfBirth;

@@ -26,11 +26,8 @@ public class UserProfile extends AuditableEntity {
     @JoinColumn(name = "user_account_id", nullable = false, unique = true)
     private UserAccount userAccount;
 
-    @Column(name = "first_name", length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", length = 100)
-    private String lastName;
+    @Column(name = "full_name", length = 150)
+    private String fullName;
 
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;

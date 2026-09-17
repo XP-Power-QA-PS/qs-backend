@@ -28,7 +28,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 request.getUsername(),
                 request.getEmail(),
                 request.getPassword(),
-                request.getRoles()
+                request.getRoles(),
+                request.getFullName()
         );
         return mapToResponse(user);
     }
@@ -41,7 +42,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 request.getEmail(),
                 request.getPassword(),
                 request.getIsEnabled(),
-                request.getRoles()
+                request.getRoles(),
+                request.getFullName()
         );
         return mapToResponse(user);
     }
@@ -90,8 +92,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .isEnabled(user.isEnabled())
                 .lastLoginAt(user.getLastLoginAt())
                 .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
-                .firstName(user.getProfile() != null ? user.getProfile().getFirstName() : null)
-                .lastName(user.getProfile() != null ? user.getProfile().getLastName() : null)
+                .fullName(user.getProfile() != null ? user.getProfile().getFullName() : null)
                 .phoneNumber(user.getProfile() != null ? user.getProfile().getPhoneNumber() : null)
                 .avatarUrl(user.getProfile() != null ? user.getProfile().getAvatarUrl() : null)
                 .createdAt(user.getCreatedAt())
