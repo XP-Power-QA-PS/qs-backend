@@ -27,6 +27,8 @@ public class ComplaintUpdateRequest {
     private String salesforceCapa;
     private String area;
     private String customerName;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate receivedDate;
     private String customerFinding;
     private String model;
     private String issueDescription;
@@ -37,10 +39,9 @@ public class ComplaintUpdateRequest {
     private String pictureUrls;
     private List<String> pictureTmpKeys;
 
-    // Phase 2: Assignment & Priority
+    // Phase 2: Assignment
     private String assignedTeam;
     private String assignedPerson;
-    private String priority;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate assignmentDeadline;
 
