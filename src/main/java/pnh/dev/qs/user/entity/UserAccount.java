@@ -33,7 +33,7 @@ public class UserAccount extends AuditableEntity implements UserDetails {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column(name = "password_hash", nullable = false)

@@ -19,20 +19,20 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long>,
     boolean existsByEmail(String email);
 
     @Query("SELECT DISTINCT u FROM UserAccount u LEFT JOIN FETCH u.profile p LEFT JOIN FETCH u.roles r " +
-           "WHERE u.isEnabled = true AND (:keyword IS NULL OR :keyword = '' OR " +
+           "WHERE u.isEnabled = true AND u.email IS NOT NULL AND u.email <> '' AND (:keyword IS NULL OR :keyword = '' OR " +
            "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<UserAccount> searchActiveRecipients(@Param("keyword") String keyword);
 
-    @Query("SELECT u FROM UserAccount u WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    @Query("SELECT u FROM UserAccount u WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR (u.email IS NOT NULL AND LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<UserAccount> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("SELECT u FROM UserAccount u WHERE u.isEnabled = :status")
     Page<UserAccount> searchByStatus(@Param("status") Boolean status, Pageable pageable);
 
-    @Query("SELECT u FROM UserAccount u WHERE u.isEnabled = :status AND (LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    @Query("SELECT u FROM UserAccount u WHERE u.isEnabled = :status AND (LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR (u.email IS NOT NULL AND LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
     Page<UserAccount> searchByStatusAndKeyword(@Param("status") Boolean status, @Param("keyword") String keyword, Pageable pageable);
 
     @Query(value = "SELECT * FROM user_accounts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC", 

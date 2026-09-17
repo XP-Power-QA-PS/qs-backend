@@ -39,20 +39,21 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedRoles() {
-        if (roleRepository.count() == 0) {
-            log.info("Seeding initial roles into the database...");
-            
-            Role userRole = new Role();
-            userRole.setName("ROLE_USER");
-            userRole.setDescription("Standard user role");
-            roleRepository.save(userRole);
+        seedRoleIfNotExists("ROLE_USER", "Standard user role");
+        seedRoleIfNotExists("ROLE_ADMIN", "Administrator role");
+        seedRoleIfNotExists("ROLE_OPERATOR", "Operator / Line worker role - no email required");
+        seedRoleIfNotExists("ROLE_INSPECTOR", "QC Inspector / KCS role - email required");
+        seedRoleIfNotExists("ROLE_QC_ENGINEER", "Quality Engineer role - email required");
+        seedRoleIfNotExists("ROLE_SUPERVISOR", "Production / Line Supervisor role - email required");
+    }
 
-            Role adminRole = new Role();
-            adminRole.setName("ROLE_ADMIN");
-            adminRole.setDescription("Administrator role");
-            roleRepository.save(adminRole);
-            
-            log.info("Roles seeded successfully.");
+    private void seedRoleIfNotExists(String name, String description) {
+        if (!roleRepository.existsByName(name)) {
+            Role role = new Role();
+            role.setName(name);
+            role.setDescription(description);
+            roleRepository.save(role);
+            log.info("Role {} seeded successfully.", name);
         }
     }
 
